@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.5);
+  --secondary: #ec4899;
+  --accent: #06b6d4;
+  --bg-dark: #020617;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  body {
+    @apply text-slate-200 antialiased;
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-dark);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-white;
+  }
+}
+
+@layer components {
+  /* Premium Glass Cards */
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl transition-all duration-500;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-card:hover {
+    @apply -translate-y-1;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Sexy Buttons */
+  .btn-neon {
+    @apply relative px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 active:scale-95;
+    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+    box-shadow: 0 0 20px var(--primary-glow);
+    color: white;
+  }
+
+  .btn-neon:hover {
+    @apply brightness-110 -translate-y-0.5;
+    box-shadow: 0 0 30px var(--primary-glow);
+  }
+
+  .btn-outline {
+    @apply px-6 py-2.5 rounded-xl font-semibold border transition-all duration-300;
+    border-color: var(--glass-border);
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+  }
+
+  .btn-outline:hover {
+    @apply bg-white/10 border-white/20 -translate-y-0.5;
+  }
+
+  /* Gradient Text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 font-bold;
+  }
+
+  /* Editor Panels */
+  .editor-container {
+    @apply rounded-2xl border border-white/5 bg-[#0d1117]/80 backdrop-blur-xl overflow-hidden shadow-2xl;
+  }
+
+  /* Inputs */
+  .sexy-input {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50;
+  }
+}
+
+/* Background Animated Glows */
+.blob {
+  @apply absolute rounded-full filter blur-[120px] opacity-20;
+  animation: float 6s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
+
+/* Custom Selection */
+::selection {
+  @apply bg-indigo-500/30 text-white;
+}
+
+/* Tab Active State */
+.active-tab {
+  @apply bg-indigo-500/20 border-b-2 border-indigo-500 text-white;
+}
+
+/* Hero Section Anim */
+.hero-gradient {
+  background: radial-gradient(circle at top center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+}
