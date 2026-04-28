@@ -1,127 +1,108 @@
-# NextGenEditor - AI-Powered Coding Platform
+# NextGenEditor - AI-Powered Collaborative Coding Platform 🚀
 
-A full-stack online coding platform with AI assistance, code execution, snippet management, and execution history.
+**NextGenEditor** is a state-of-the-art, cyberpunk-themed coding environment designed for the modern developer. It combines a powerful code execution engine with real-time AI intelligence, a social ecosystem, and a coin-based gamification system.
 
-## Tech Stack
+![NextGenEditor Preview](https://via.placeholder.com/1200x600/020617/6366f1?text=NextGenEditor+AI+Intelligence)
 
-- **Frontend:** React (Vite) + TailwindCSS + Monaco Editor
-- **Backend:** Node.js + Express + MongoDB (Mongoose)
-- **AI:** Google Gemini API
-- **Code Execution:** Piston API (https://emkc.org/api/v2/piston)
-- **Auth:** JWT
+## ✨ Core Features
 
-## Features
+### 🧠 AI Intelligence Panel
+*   **Explain**: Get deep insights into complex code blocks.
+*   **Analyze**: Optimize and identify potential bottlenecks.
+*   **Convert**: Instantly translate code between 10+ languages.
+*   **Advanced Debugger (Premium)**: Let AI find and fix your bugs for you.
 
-- Multi-language code editor (JavaScript, Python, C++, Java)
-- Real-time code execution with stdin/stdout support
-- AI Code Explainer (beginner & detailed modes)
-- AI Code Analyzer (bugs, optimization, complexity)
-- AI Code Converter (between languages)
-- AI Debugger (auto-fix code errors)
-- Code Snippets Manager with tags and search
-- Execution History tracking
-- Dark/Light mode toggle
-- Responsive design
-- Keyboard shortcuts (Ctrl+Enter to run)
+### 💰 Coin-Based Economy
+*   **Earn**: Get rewarded for coding! 
+    *   +1 Coin for AI interactions.
+    *   +2 Coins for successful code execution.
+    *   +5 Coins for saving snippets.
+*   **Unlock Premium**: Accumulate 10,000 coins to unlock the **Premium Tier**, featuring the Advanced Debugger and exclusive profile badges.
 
-## Project Structure
+### 🌐 Social Developer Network
+*   **Public Portfolios**: Share your coding journey with a public profile URL.
+*   **Follow System**: Connect with other developers and track their progress.
+*   **Profile Views**: See how many people are checking out your work.
+*   **Custom Avatars**: Personalize your identity with PFP uploads.
 
-```
-NextGenEditor/
-├── server/                 # Backend
-│   ├── models/            # Mongoose models
-│   ├── routes/            # API routes
-│   ├── middleware/        # Auth middleware
-│   ├── index.js           # Entry point
-│   └── package.json
-└── client/                # Frontend
-    ├── src/
-    │   ├── components/    # React components
-    │   ├── pages/         # Page components
-    │   ├── context/       # Auth context
-    │   └── ...
-    └── package.json
-```
+### 💻 Powerful Editor
+*   **Multi-Language Execution**: Support for Javascript, Python, C, C++, Java, Go, and Rust.
+*   **Snippet Manager**: Save, search, and manage your reusable code blocks.
+*   **Glassmorphism UI**: A premium, responsive design with neon accents and backdrop-blur effects.
 
-## Setup Instructions
+## 🛠️ Tech Stack
 
-### Prerequisites
-- Node.js 18+
-- MongoDB (local or Atlas)
-- Google Gemini API key (optional, for AI features)
+### Frontend
+*   **React (Vite)**: Lightning-fast frontend architecture.
+*   **Tailwind CSS**: Modern utility-first styling with custom glassmorphism components.
+*   **Lucide-React**: Sleek, professional iconography.
+*   **Axios**: Secure and efficient API communication.
+*   **Context API**: Global state management for Auth and Economy.
 
-### Backend Setup
+### Backend
+*   **Node.js & Express**: Scalable server-side logic.
+*   **MongoDB & Mongoose**: Flexible NoSQL database for users, snippets, and social data.
+*   **Groq API**: High-speed AI inference using Llama 3 models.
+*   **JWT (JSON Web Tokens)**: Secure, stateless authentication.
+*   **Bcrypt.js**: Industry-standard password hashing.
 
-```bash
-cd server
-npm install
+## 📦 Important Libraries & Dependencies
 
-# Create .env file
-cp .env.example .env
-# Edit .env with your credentials:
-# - MONGO_URI
-# - JWT_SECRET
-# - GEMINI_API_KEY (optional)
+### Server-Side
+*   `express`: Core web framework.
+*   `mongoose`: ODM for MongoDB.
+*   `jsonwebtoken`: For secure authentication.
+*   `bcryptjs`: For data security.
+*   `axios`: For Groq AI API integration.
+*   `cors`: For handling cross-origin requests.
 
-npm run dev
-```
+### Client-Side
+*   `lucide-react`: For the premium icon set.
+*   `axios`: For all backend interactions.
+*   `react-router-dom`: For client-side routing.
 
-Server runs on `http://localhost:5000`
+## 🔑 Key Functions
 
-### Frontend Setup
+### Backend
+*   `callAI(prompt)`: Standardized utility for communicating with the Groq AI engine.
+*   `runLocalCode(code, lang)`: Securely executes user code and captures stdout/stderr.
+*   `aiHandler`: A reusable higher-order function for processing different AI tool requests.
 
-```bash
-cd client
-npm install
+### Frontend
+*   `refreshUser()`: Syncs the user's coins, premium status, and profile data across all components.
+*   `handleAIAction()`: The main engine in `AIPanel` that manages tool execution and coin rewards.
+*   `handleSaveSnippet()`: Manages code persistence and awards bonus coins.
 
-# Create .env file
-cp .env.example .env
-# Edit .env:
-# VITE_API_URL=http://localhost:5000/api
+## 🚀 Getting Started
 
-npm run dev
-```
+1. **Clone the Repo**
+   ```bash
+   git clone https://github.com/sameerrswami/NextGenEditor.git
+   ```
 
-Frontend runs on `http://localhost:3000`
+2. **Setup Environment Variables**
+   Create a `.env` file in the `server` directory:
+   ```env
+   PORT=5005
+   MONGO_URI=your_mongodb_uri
+   JWT_SECRET=your_secret_key
+   GROQ_API_KEY=your_groq_key
+   ```
 
-## Environment Variables
+3. **Install Dependencies**
+   ```bash
+   cd server && npm install
+   cd ../client && npm install
+   ```
 
-### Backend (.env)
-```
-PORT=5000
-MONGO_URI=mongodb+srv://...
-JWT_SECRET=your_secret_key
-GEMINI_API_KEY=your_gemini_key
-```
+4. **Run Development Mode**
+   ```bash
+   # Terminal 1 (Server)
+   npm run dev
+   
+   # Terminal 2 (Client)
+   npm run dev
+   ```
 
-### Frontend (.env)
-```
-VITE_API_URL=http://localhost:5000/api
-```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/auth/register | POST | User registration |
-| /api/auth/login | POST | User login |
-| /api/code/run | POST | Execute code |
-| /api/ai/explain | POST | AI code explanation |
-| /api/ai/analyze | POST | AI code analysis |
-| /api/ai/convert | POST | AI code conversion |
-| /api/ai/debug | POST | AI debugging |
-| /api/snippet | GET/POST | Snippet CRUD |
-| /api/snippet/:id | DELETE | Delete snippet |
-| /api/history | GET | Execution history |
-
-## Deployment
-
-- **Frontend:** Vercel
-- **Backend:** Render
-- **Database:** MongoDB Atlas
-
-## Notes
-
-- Without `GEMINI_API_KEY`, AI features show a disabled message
-- The app works in demo mode without external API keys
-
+## 📜 License
+MIT License - Developed by **Sameer Swami**
