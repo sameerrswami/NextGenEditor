@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import MagicTrail from './components/MagicTrail';
 import Login from './pages/Login';
 import Editor from './pages/Editor';
 import Dashboard from './pages/Dashboard';
@@ -20,6 +21,7 @@ const PrivateRoute = ({ children }) => {
 function AppContent() {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 transition-colors duration-300">
+      <MagicTrail />
       <Navbar />
       <div className="animate-fadeIn">
         <Routes>

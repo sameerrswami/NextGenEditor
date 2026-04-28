@@ -127,3 +127,25 @@
 .hero-gradient {
   background: radial-gradient(circle at top center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
 }
+@keyframes magicFade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+}
+
+.magic-dot {
+  position: absolute;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  animation: magicFade 1.2s ease-out forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
