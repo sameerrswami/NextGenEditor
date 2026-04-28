@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: nextgeneditor-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    rootDir: server
+    envVars:
+      - key: PORT
+        value: 5005
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGO_URI
+        fromValue: ${MONGO_URI}
+      - key: JWT_SECRET
+        fromValue: ${JWT_SECRET}
+      - key: GROQ_API_KEY
+        fromValue: ${GROQ_API_KEY}
