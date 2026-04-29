@@ -5,7 +5,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 
-dotenv.config();
+const path = require('path');
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+console.log('Environment variables loaded');
 
 const app = express();
 
@@ -79,7 +82,7 @@ const startServer = (port) => {
   });
 };
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nextgeneditor')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nextgeneditor')
   .then(() => {
     console.log('MongoDB connected');
     startServer(PORT);
