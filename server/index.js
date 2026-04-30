@@ -12,6 +12,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 console.log('Environment variables loaded');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 const io = new Server(server, {
