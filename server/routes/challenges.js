@@ -1,68 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
 const Challenge = require('../models/Challenge');
 const auth = require('../middleware/authMiddleware');
 const User = require('../models/User');
 
-// ── Inline code runner (same pattern as code.js) ──────────────────────────
-const LANGUAGE_CONFIGS = {
-  javascript: { cmd: 'node', ext: 'js', args: [] },
-  python:     { cmd: 'python', ext: 'py', args: [] },
-  cpp:        { cmd: 'g++', ext: 'cpp', args: ['-o', 'output.exe'], isCompiled: true, runCmd: 'output.exe' },
-  c:          { cmd: 'gcc', ext: 'c',   args: ['-o', 'output.exe'], isCompiled: true, runCmd: 'output.exe' },
-  java:       { cmd: 'javac', ext: 'java', args: [], isCompiled: true, runCmd: 'java Main' },
+const JUDGE0_LANG_MAP = {
+  javascript: 102, // Node 22
+  typescript: 101, // TS 5.6
+  python: 100,     // Python 3.12
+  python3: 100,
+  cpp: 105,        // C++ GCC 14.1
+  c: 103,          // C GCC 14.1
+  java: 91,        // Java 17
+  go: 107,         // Go 1.23
+  rust: 108,       // Rust 1.85
+  php: 98          // PHP 8.3
 };
 
-function runCode(codeText, config, input = '') {
-  return new Promise((resolve) => {
-    const tmpDir = os.tmpdir();
-    const id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const fileName = `code_${id}.${config.ext}`;
-    const filePath = path.join(tmpDir, fileName);
-    const outputExeName = config.isCompiled ? `output_${id}.exe` : '';
-    const outputExe = config.isCompiled ? path.join(tmpDir, outputExeName) : '';
+async function runCloudCode(codeText, language, input = '') {
+  const language_id = JUDGE0_LANG_MAP[language.toLowerCase()];
+  if (!language_id) throw new Error('Unsupported language: ' + language);
 
-    fs.writeFileSync(filePath, codeText);
-
-    const execute = (cmd, args, withInput = false) => new Promise((res) => {
-      const child = spawn(cmd, args, { cwd: tmpDir, timeout: 10000, shell: true });
-      let stdout = '', stderr = '';
-      if (withInput && input) { child.stdin.write(input); child.stdin.end(); }
-      child.stdout.on('data', d => stdout += d.toString());
-      child.stderr.on('data', d => stderr += d.toString());
-      child.on('close', exitCode => res({ stdout, stderr, exitCode }));
-      child.on('error', err => res({ stdout, stderr, exitCode: -1, error: err.message }));
-    });
-
-    (async () => {
-      try {
-        let output = '', error = '', exitCode = 0;
-        if (config.isCompiled) {
-          const compileArgs = config.args.map(a => a === 'output.exe' ? outputExeName : a);
-          const cr = await execute(config.cmd, [...compileArgs, fileName], false);
-          if (cr.exitCode !== 0) {
-            try { fs.unlinkSync(filePath); } catch (_) {}
-            return resolve({ output: '', error: cr.stderr, exitCode: cr.exitCode });
-          }
-          const rr = await execute(outputExe, [], true);
-          output = rr.stdout; error = rr.stderr; exitCode = rr.exitCode;
-        } else {
-          const rr = await execute(config.cmd, [...config.args, fileName], true);
-          output = rr.stdout; error = rr.stderr; exitCode = rr.exitCode;
-        }
-        try { fs.unlinkSync(filePath); } catch (_) {}
-        if (outputExe) try { fs.unlinkSync(outputExe); } catch (_) {}
-        resolve({ output: output.trim(), error, exitCode });
-      } catch (err) {
-        try { fs.unlinkSync(filePath); } catch (_) {}
-        resolve({ output: '', error: err.message, exitCode: -1 });
-      }
-    })();
+  const response = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_code: codeText,
+      language_id: language_id,
+      stdin: input
+    })
   });
+  
+  if (!response.ok) {
+    throw new Error('Cloud execution API returned ' + response.status);
+  }
+  
+  const result = await response.json();
+  const isError = result.status?.id > 3;
+  
+  const finalOutput = result.stdout || '';
+  const finalError = result.stderr || result.compile_output || (isError ? result.status?.description : '');
+  
+  return {
+    output: finalOutput,
+    error: finalError,
+    exitCode: isError ? 1 : 0
+  };
 }
 
 // ── GET /api/challenges - list all ─────────────────────────────────────────
@@ -105,14 +88,14 @@ router.post('/:id/submit', auth, async (req, res) => {
     const challenge = await Challenge.findById(req.params.id);
     if (!challenge) return res.status(404).json({ error: 'Challenge not found' });
 
-    const config = LANGUAGE_CONFIGS[language.toLowerCase()];
-    if (!config) return res.status(400).json({ error: `Language ${language} not supported` });
+    const langKey = language.toLowerCase();
+    if (!JUDGE0_LANG_MAP[langKey]) return res.status(400).json({ error: `Language ${language} not supported` });
 
     const results = [];
     let allPassed = true;
 
     for (const tc of challenge.testCases) {
-      const { output, error, exitCode } = await runCode(code, config, tc.input);
+      const { output, error, exitCode } = await runCloudCode(code, language, tc.input);
       const expected = tc.expectedOutput.trim();
       const actual = output.trim();
       const passed = actual === expected && exitCode === 0;
@@ -121,16 +104,39 @@ router.post('/:id/submit', auth, async (req, res) => {
     }
 
     let earnedCoins = 0;
+    let earnedBadges = [];
     if (allPassed) {
       earnedCoins = challenge.points;
-      await User.findByIdAndUpdate(req.userId, { $inc: { coins: earnedCoins } });
+      const user = await User.findById(req.userId);
+      user.coins += earnedCoins;
+      user.solvedChallenges = (user.solvedChallenges || 0) + 1;
+      
+      const badgesToAward = [
+        { count: 1, name: 'Novice Coder' },
+        { count: 10, name: 'Intermediate Coder' },
+        { count: 25, name: 'Advanced Coder' },
+        { count: 50, name: 'Expert Coder' },
+        { count: 100, name: 'Algorithm Master' }
+      ];
+      
+      for (const b of badgesToAward) {
+        if (user.solvedChallenges === b.count && !user.badges.includes(b.name)) {
+          user.badges.push(b.name);
+          earnedBadges.push(b.name);
+        }
+      }
+      
+      await user.save();
     }
 
     res.json({
       passed: allPassed,
       results,
       earnedCoins,
-      message: allPassed ? `🎉 All test cases passed! +${earnedCoins} coins` : '❌ Some test cases failed. Keep trying!',
+      earnedBadges,
+      message: allPassed 
+        ? `🎉 All test cases passed! +${earnedCoins} coins${earnedBadges.length > 0 ? ` 🏅 Earned Badge: ${earnedBadges.join(', ')}` : ''}` 
+        : '❌ Some test cases failed. Keep trying!',
     });
   } catch (err) {
     console.error('Challenge submit error:', err);
@@ -209,6 +215,61 @@ router.post('/seed/demo', auth, async (req, res) => {
         testCases: [
           { input: 'Hello World', expectedOutput: 'World Hello' },
           { input: 'The quick brown fox', expectedOutput: 'fox brown quick The' },
+        ],
+      },
+      {
+        title: 'Factorial',
+        description: 'Calculate the factorial of a given non-negative integer N. Input is a single integer.',
+        difficulty: 'Easy',
+        points: 20,
+        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        testCases: [
+          { input: '5', expectedOutput: '120' },
+          { input: '0', expectedOutput: '1' },
+          { input: '3', expectedOutput: '6' },
+        ],
+      },
+      {
+        title: 'FizzBuzz',
+        description: 'Print numbers from 1 to N. For multiples of 3, print "Fizz" instead of the number. For multiples of 5, print "Buzz". For numbers which are multiples of both 3 and 5, print "FizzBuzz". Input is N.',
+        difficulty: 'Easy',
+        points: 30,
+        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        testCases: [
+          { input: '15', expectedOutput: '1\\n2\\nFizz\\n4\\nBuzz\\nFizz\\n7\\n8\\nFizz\\nBuzz\\n11\\nFizz\\n13\\n14\\nFizzBuzz' },
+        ],
+      },
+      {
+        title: 'Find Maximum in Array',
+        description: 'Find the maximum value in an array of space-separated integers. Input is a single line of integers.',
+        difficulty: 'Easy',
+        points: 15,
+        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        testCases: [
+          { input: '3 5 1 8 4', expectedOutput: '8' },
+          { input: '-10 -20 -5 -30', expectedOutput: '-5' },
+        ],
+      },
+      {
+        title: 'Anagram Check',
+        description: 'Given two words separated by a space, print "YES" if they are anagrams, "NO" otherwise.',
+        difficulty: 'Medium',
+        points: 40,
+        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        testCases: [
+          { input: 'listen silent', expectedOutput: 'YES' },
+          { input: 'hello world', expectedOutput: 'NO' },
+        ],
+      },
+      {
+        title: 'Vowel Count',
+        description: 'Count the number of vowels (a, e, i, o, u) in a given string. Input is a single line string. Output the integer count.',
+        difficulty: 'Easy',
+        points: 15,
+        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        testCases: [
+          { input: 'hello world', expectedOutput: '3' },
+          { input: 'rhythm', expectedOutput: '0' },
         ],
       },
     ];

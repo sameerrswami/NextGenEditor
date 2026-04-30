@@ -44,6 +44,13 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  solvedChallenges: {
+    type: Number,
+    default: 0
+  },
+  badges: [{
+    type: String
+  }],
   avatar: {
     type: String,
     default: ''

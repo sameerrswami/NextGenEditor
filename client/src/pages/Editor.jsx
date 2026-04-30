@@ -104,7 +104,16 @@ const Editor = () => {
             <FileCode size={16} className="text-indigo-400" />
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => {
+                const newLang = e.target.value;
+                const isDefaultCode = Object.values(DEFAULT_CODE).some(
+                  defCode => defCode.replace(/\\s+/g, '') === code.replace(/\\s+/g, '')
+                );
+                if (isDefaultCode || code.trim() === '') {
+                  setCode(DEFAULT_CODE[newLang]);
+                }
+                setLanguage(newLang);
+              }}
               className="bg-transparent text-sm font-bold text-slate-200 outline-none cursor-pointer"
             >
               {Object.keys(DEFAULT_CODE).map(lang => (

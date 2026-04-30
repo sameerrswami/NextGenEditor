@@ -131,7 +131,7 @@ const Profile = () => {
 
   const stats = [
     { label: 'Followers', value: profileUser?.followers?.length || 0, icon: <Users size={20} className="text-indigo-400" /> },
-    { label: 'Following', value: profileUser?.following?.length || 0, icon: <Heart size={20} className="text-pink-400" /> },
+    { label: 'Solved', value: profileUser?.solvedChallenges || 0, icon: <CheckCircle size={20} className="text-emerald-400" /> },
     { label: 'Coins', value: profileUser?.coins || 0, icon: <Star size={20} className="text-amber-400" /> },
     { label: 'Views', value: profileUser?.profileViews || 0, icon: <Eye size={20} className="text-cyan-400" /> },
   ];
@@ -265,6 +265,24 @@ const Profile = () => {
               </div>
             ))}
           </div>
+
+          {/* Badges Section */}
+          {profileUser?.badges && profileUser.badges.length > 0 && (
+            <div className="glass-card p-6 border-amber-500/20">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Award size={20} className="text-amber-400" />
+                Achievements & Badges
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {profileUser.badges.map((badge, idx) => (
+                  <div key={idx} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-xl">
+                    <Award size={16} className="text-amber-400" />
+                    <span className="text-sm font-bold text-amber-100">{badge}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* About Section */}
           <div className="glass-card p-8">

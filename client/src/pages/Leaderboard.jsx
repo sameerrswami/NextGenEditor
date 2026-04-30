@@ -136,12 +136,17 @@ export default function Leaderboard() {
                 </div>
                 <p className="text-xs text-slate-500 truncate">{entry.bio}</p>
               </div>
-              <div className="flex items-center gap-3 text-sm flex-shrink-0">
-                <span className="text-slate-500 text-xs">{entry.followers} followers</span>
-                <div className="flex items-center gap-1 font-black text-amber-400">
-                  <Star size={12} className="fill-amber-400" />
-                  {entry.coins}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 rounded-lg text-amber-400">
+                  <Star size={14} className="fill-amber-400" />
+                  <span className="font-bold">{entry.coins}</span>
                 </div>
+                {entry.badges && entry.badges.length > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 rounded-lg text-rose-400" title={entry.badges.join(', ')}>
+                    <Award size={14} />
+                    <span className="font-bold text-xs">{entry.badges.length}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
