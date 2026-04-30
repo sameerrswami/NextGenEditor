@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Clock, Trash2, Search, Tag, Code2, Loader2, History, Edit3, ArrowRight, Star, ExternalLink } from 'lucide-react';
+import { BookOpen, Clock, Trash2, Search, Tag, Code2, Loader2, History, Edit3, ArrowRight, Star, ExternalLink, Terminal } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -202,8 +202,8 @@ const Dashboard = () => {
                             <span className="status-success">Success</span>
                           )}
                         </td>
-                        <td className="px-6 py-5 text-slate-400 text-sm">{item.executionTime.toFixed(3)}s</td>
-                        <td className="px-6 py-5 text-slate-500 text-sm text-right">{new Date(item.createdAt).toLocaleString()}</td>
+                        <td className="px-6 py-5 text-slate-400 text-sm">{typeof item.executionTime === 'number' ? `${item.executionTime.toFixed(3)}s` : '-'}</td>
+                        <td className="px-6 py-5 text-slate-500 text-sm text-right">{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
