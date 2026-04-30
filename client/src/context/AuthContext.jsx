@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
   }, [logout]);
 
   useEffect(() => {
+    console.log('AuthContext: API_URL is', API_URL);
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const savedUser = localStorage.getItem('user');
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await axios.post(`${API_URL}/auth/login`, { email, password });
+    if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
@@ -62,6 +64,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     const res = await axios.post(`${API_URL}/auth/register`, { username, email, password });
+    if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));

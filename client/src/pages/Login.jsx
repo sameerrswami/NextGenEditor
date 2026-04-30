@@ -27,7 +27,7 @@ const Login = () => {
       }
       navigate('/editor');
     } catch (err) {
-      setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+      setError(err.response?.data?.error || err.response?.data?.msg || err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
