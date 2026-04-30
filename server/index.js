@@ -49,7 +49,19 @@ app.use('/api/user', require('./routes/user'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'NextGenEditor API is running' });
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = {
+    0: 'Disconnected',
+    1: 'Connected',
+    2: 'Connecting',
+    3: 'Disconnecting',
+  };
+  
+  res.json({ 
+    status: 'OK', 
+    message: 'NextGenEditor API is running',
+    database: dbStatus[dbState] || 'Unknown'
+  });
 });
 
 // 404 handler for unknown API routes
