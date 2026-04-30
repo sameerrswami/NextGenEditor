@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Code2, User, LogOut, LayoutDashboard, Terminal, Menu, X, Star, Award } from 'lucide-react';
+import { Code2, User, LogOut, LayoutDashboard, Terminal, Menu, X, Star, Award, Trophy, Users, Swords } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -11,7 +11,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       refreshUser();
-      const interval = setInterval(refreshUser, 60000); // Refresh every minute
+      const interval = setInterval(refreshUser, 60000);
       return () => clearInterval(interval);
     }
   }, [user?.username]);
@@ -46,19 +46,22 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1">
           {user && (
             <>
-              <NavLink to="/editor" icon={Terminal}>Editor</NavLink>
-              <NavLink to="/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
-              <NavLink to="/profile" icon={User}>Profile</NavLink>
+              <NavLink to="/editor"      icon={Terminal}>Editor</NavLink>
+              <NavLink to="/dashboard"   icon={LayoutDashboard}>Dashboard</NavLink>
+              <NavLink to="/challenges"  icon={Swords}>Challenges</NavLink>
+              <NavLink to="/leaderboard" icon={Trophy}>Leaderboard</NavLink>
+              <NavLink to="/multiplayer" icon={Users}>Multiplayer</NavLink>
+              <NavLink to="/profile"     icon={User}>Profile</NavLink>
             </>
           )}
 
           <div className="h-6 w-[1px] bg-white/10 mx-2" />
 
           {user ? (
-            <div className="flex items-center gap-4 ml-2">
+            <div className="flex items-center gap-3 ml-2">
               {/* Coin Counter */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-400/10 border border-amber-400/20">
                 <Star size={14} className="text-amber-400 fill-amber-400" />
@@ -68,21 +71,20 @@ const Navbar = () => {
               <Link to="/profile" className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-indigo-500/30 transition-all">
                 <div className={`w-7 h-7 rounded-full ${user.isPremium ? 'bg-amber-400/20' : 'bg-indigo-500/20'} flex items-center justify-center relative overflow-hidden`}>
                   {user.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt="Avatar" 
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
+                      onError={e => { e.target.style.display = 'none'; }}
                     />
                   ) : (
                     <User size={14} className={user.isPremium ? 'text-amber-400' : 'text-indigo-400'} />
                   )}
-                  {user.isPremium && <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 text-[8px] text-slate-900 z-10"><Award size={8} /></div>}
+                  {user.isPremium && <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 z-10"><Award size={8} /></div>}
                 </div>
                 <span className="text-sm font-medium text-slate-300">{user.username}</span>
               </Link>
+
               <button
                 onClick={logout}
                 className="p-2.5 rounded-xl bg-red-500/5 text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all duration-300"
@@ -92,14 +94,12 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="btn-neon">
-              Login Now
-            </Link>
+            <Link to="/login" className="btn-neon">Login Now</Link>
           )}
         </div>
 
         {/* Mobile Toggle */}
-        <button 
+        <button
           className="md:hidden p-2 text-slate-400"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
@@ -109,12 +109,15 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full p-4 bg-[#020617] border-b border-white/5 flex flex-col gap-2 animate-slideDown">
+        <div className="md:hidden absolute top-full left-0 w-full p-4 bg-[#020617] border-b border-white/5 flex flex-col gap-2 animate-slideDown z-50">
           {user && (
             <>
-              <NavLink to="/editor" icon={Terminal}>Editor</NavLink>
-              <NavLink to="/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
-              <NavLink to="/profile" icon={User}>Profile</NavLink>
+              <NavLink to="/editor"      icon={Terminal}>Editor</NavLink>
+              <NavLink to="/dashboard"   icon={LayoutDashboard}>Dashboard</NavLink>
+              <NavLink to="/challenges"  icon={Swords}>Challenges</NavLink>
+              <NavLink to="/leaderboard" icon={Trophy}>Leaderboard</NavLink>
+              <NavLink to="/multiplayer" icon={Users}>Multiplayer</NavLink>
+              <NavLink to="/profile"     icon={User}>Profile</NavLink>
               <button
                 onClick={logout}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-all"
@@ -133,4 +136,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

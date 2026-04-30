@@ -7,6 +7,9 @@ import Login from './pages/Login';
 import Editor from './pages/Editor';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import Challenges from './pages/Challenges';
+import Leaderboard from './pages/Leaderboard';
+import Multiplayer from './pages/Multiplayer';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -25,11 +28,14 @@ function AppContent() {
       <Navbar />
       <div className="animate-fadeIn">
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/editor" element={<PrivateRoute><Editor /></PrivateRoute>} />
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/login"        element={<Login />} />
+          <Route path="/editor"       element={<PrivateRoute><Editor /></PrivateRoute>} />
+          <Route path="/dashboard"    element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile/:username?" element={<PrivateRoute><Profile /></PrivateRoute>} />
-          <Route path="/" element={<Navigate to="/editor" />} />
+          <Route path="/challenges"   element={<PrivateRoute><Challenges /></PrivateRoute>} />
+          <Route path="/leaderboard"  element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
+          <Route path="/multiplayer"  element={<PrivateRoute><Multiplayer /></PrivateRoute>} />
+          <Route path="/"             element={<Navigate to="/editor" />} />
           <Route path="*" element={
             <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] animate-scaleIn">
               <h1 className="text-6xl font-bold gradient-text mb-4">404</h1>
@@ -52,4 +58,3 @@ function App() {
 }
 
 export default App;
-

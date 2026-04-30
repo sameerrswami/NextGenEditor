@@ -33,6 +33,8 @@ const Editor = () => {
   const [input, setInput] = useState(() => location.state?.input || '');
   const [snippetTitle, setSnippetTitle] = useState(() => location.state?.title || '');
   const [snippetTags, setSnippetTags] = useState('');
+  const [theme, setTheme] = useState('vs-dark');
+  const [vimMode, setVimMode] = useState(false);
 
   const [output, setOutput] = useState('');
   const [runError, setRunError] = useState('');
@@ -110,6 +112,25 @@ const Editor = () => {
               ))}
             </select>
           </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
+            <Layout size={16} className="text-indigo-400" />
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              className="bg-transparent text-sm font-bold text-slate-200 outline-none cursor-pointer"
+            >
+              <option value="vs-dark" className="bg-slate-900">Dark</option>
+              <option value="light" className="bg-slate-900">Light</option>
+              <option value="hc-black" className="bg-slate-900">High Contrast</option>
+            </select>
+          </div>
+          
+          <button
+            onClick={() => setVimMode(!vimMode)}
+            className={`px-3 py-1.5 rounded-xl border text-sm font-bold transition-all ${vimMode ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50' : 'bg-white/5 text-slate-400 border-white/10 hover:text-slate-200 hover:bg-white/10'}`}
+          >
+            Vim
+          </button>
           
           <button
             onClick={handleRun}
@@ -151,7 +172,8 @@ const Editor = () => {
               code={code}
               setCode={setCode}
               language={language}
-              theme="vs-dark"
+              theme={theme}
+              vimMode={vimMode}
             />
           </div>
           
