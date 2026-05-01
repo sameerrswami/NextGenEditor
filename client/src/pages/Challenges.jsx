@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../api';
 import { Trophy, Zap, CheckCircle, XCircle, ChevronRight, Terminal, Clock, Star, Award, Code2, Play, Loader2, RefreshCw } from 'lucide-react';
 import CodeEditor from '../components/CodeEditor';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const DIFFICULTY_COLORS = {
   Easy:   { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
@@ -13,9 +11,16 @@ const DIFFICULTY_COLORS = {
 };
 
 const DEFAULT_CODE = {
-  javascript: '// Write your solution here\nconsole.log("Hello");',
-  python:     '# Write your solution here\nprint("Hello")',
-  cpp:        '#include <iostream>\nusing namespace std;\nint main() {\n    // Write your solution here\n    return 0;\n}',
+  javascript: '// Write your solution here\nconst input = require("fs").readFileSync("/dev/stdin","utf8").trim();',
+  typescript: '// Write your solution here\nconst input = require("fs").readFileSync("/dev/stdin","utf8").trim();',
+  python:     '# Write your solution here\ninput_data = input().strip()',
+  cpp:        '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    // Write your solution here\n    return 0;\n}',
+  c:          '#include <stdio.h>\n#include <string.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}',
+  java:       'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write your solution here\n        sc.close();\n    }\n}',
+  go:         'package main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    // Write your solution here\n    _ = reader\n}',
+  rust:       'use std::io::{self, BufRead};\n\nfn main() {\n    let stdin = io::stdin();\n    // Write your solution here\n}',
+  php:        '<?php\n// Write your solution here\n$input = trim(fgets(STDIN));\n?>',
+  ruby:       '# Write your solution here\ninput = gets.chomp',
 };
 
 export default function Challenges() {
@@ -33,7 +38,7 @@ export default function Challenges() {
   const fetchChallenges = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/challenges`);
+      const res = await api.get('/challenges');
       setChallenges(res.data);
     } catch (err) {
       console.error('Failed to fetch challenges', err);
@@ -64,8 +69,7 @@ export default function Challenges() {
     setSubmitting(true);
     setResults(null);
     try {
-      const res = await axios.post(`${API_URL}/challenges/${selected._id}/submit`, { code, language });
-      setResults(res.data);
+      const res = await api.post(`/challenges/${selected._id}/submit`, { code, language });
     } catch (err) {
       setResults({ passed: false, message: err.response?.data?.error || 'Submission failed', results: [] });
     } finally {
@@ -76,7 +80,7 @@ export default function Challenges() {
   const handleSeed = async () => {
     setSeeding(true);
     try {
-      await axios.post(`${API_URL}/challenges/seed/demo`);
+      await api.post('/challenges/seed/demo');
       await fetchChallenges();
     } catch (err) {
       console.error('Seed failed', err);
@@ -230,8 +234,15 @@ export default function Challenges() {
                   className="bg-white/5 border border-white/10 text-slate-200 text-sm rounded-xl px-3 py-1.5 outline-none cursor-pointer"
                 >
                   <option value="javascript" className="bg-slate-900">JavaScript</option>
+                  <option value="typescript" className="bg-slate-900">TypeScript</option>
                   <option value="python" className="bg-slate-900">Python</option>
                   <option value="cpp" className="bg-slate-900">C++</option>
+                  <option value="c" className="bg-slate-900">C</option>
+                  <option value="java" className="bg-slate-900">Java</option>
+                  <option value="go" className="bg-slate-900">Go</option>
+                  <option value="rust" className="bg-slate-900">Rust</option>
+                  <option value="php" className="bg-slate-900">PHP</option>
+                  <option value="ruby" className="bg-slate-900">Ruby</option>
                 </select>
                 <button
                   onClick={handleSubmit}

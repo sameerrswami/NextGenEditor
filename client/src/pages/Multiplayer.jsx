@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { api } from '../api';
 import CodeEditor from '../components/CodeEditor';
 import { Users, Link2, Copy, Check, MessageSquare, Send, Play, Loader2, FileCode, Hash, LogOut } from 'lucide-react';
 
-const API_URL    = import.meta.env.VITE_API_URL    || 'http://localhost:5000/api';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (API_URL.replace('/api', ''));
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 const LANGUAGES = ['javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust'];
 
@@ -141,7 +140,7 @@ export default function Multiplayer() {
     setOutput('');
     setRunError('');
     try {
-      const res = await axios.post(`${API_URL}/code/run`, { code, language, input: '' });
+      const res = await api.post('/code/run', { code, language, input: '' });
       setOutput(res.data.output || '');
       setRunError(res.data.error || '');
     } catch (err) {

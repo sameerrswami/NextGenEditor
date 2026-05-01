@@ -14,7 +14,8 @@ const JUDGE0_LANG_MAP = {
   java: 91,        // Java 17
   go: 107,         // Go 1.23
   rust: 108,       // Rust 1.85
-  php: 98          // PHP 8.3
+  php: 98,         // PHP 8.3
+  ruby: 72         // Ruby 3.3
 };
 
 async function runCloudCode(codeText, language, input = '') {
@@ -73,6 +74,7 @@ router.post('/run', authMiddleware, async (req, res) => {
         User.findByIdAndUpdate(req.userId, { $inc: { coins: 2 } })
           .catch(err => console.error("[Code] Coin Reward Error:", err));
       }
+
 
       // Save to history
       const historyEntry = new History({

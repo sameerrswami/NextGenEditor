@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../api';
 import { User, Mail, Calendar, Settings, Shield, Award, Terminal, Heart, Eye, Users, CheckCircle, Star, Loader2, Camera, Edit2, X, Save } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const Profile = () => {
   const { user: currentUser, refreshUser } = useAuth();
@@ -36,8 +34,8 @@ const Profile = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const endpoint = isOwnProfile ? `${API_URL}/user/me` : `${API_URL}/user/profile/${username}`;
-      const res = await axios.get(endpoint);
+      const endpoint = isOwnProfile ? '/user/me' : `/user/profile/${username}`;
+      const res = await api.get(endpoint);
       setProfileUser(res.data);
       
       if (isOwnProfile) {
@@ -60,7 +58,7 @@ const Profile = () => {
 
   const handleFollow = async () => {
     try {
-      const res = await axios.post(`${API_URL}/user/follow/${profileUser._id}`);
+      const res = await api.post(`/user/follow/${profileUser._id}`);
       setIsFollowing(res.data.following);
       fetchProfile();
     } catch (err) {
@@ -77,7 +75,7 @@ const Profile = () => {
     
     setBuyingPremium(true);
     try {
-      await axios.post(`${API_URL}/user/premium/buy`);
+      await api.post('/user/premium/buy');
       setMessage('Welcome to Premium!');
       refreshUser();
       fetchProfile();
@@ -106,7 +104,7 @@ const Profile = () => {
   const handleUpdateProfile = async () => {
     setSaving(true);
     try {
-      const res = await axios.put(`${API_URL}/user/profile`, editForm);
+      const res = await api.put('/user/profile', editForm);
       setProfileUser(res.data);
       setIsEditing(false);
       setMessage('Profile updated successfully!');

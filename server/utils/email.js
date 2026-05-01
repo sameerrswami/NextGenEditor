@@ -1,0 +1,132 @@
+const nodemailer = require('nodemailer');
+const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL, NODE_ENV } = require('../config');
+
+let transporter = null;
+
+// Initialize transporter if SMTP credentials are available
+if (SMTP_USER && SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465, // true for 465, false for other ports
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+} else if (NODE_ENV === 'development') {
+  console.log('\n⚠️  SMTP credentials not configured. Email OTPs will be logged to console.\n');
+}
+
+/**
+ * Send OTP email
+ * @param {string} to - Recipient email
+ * @param {string} otp - OTP code
+ * @param {string} purpose - Purpose of the OTP (e.g., 'verification', 'password-reset')
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+const sendOTPEmail = async (to, otp, purpose = 'verification') => {
+  const subject = purpose === 'password-reset'
+    ? 'Password Reset - NextGenEditor'
+    : 'Email Verification - NextGenEditor';
+
+  const purposeText = purpose === 'password-reset'
+    ? 'reset your password'
+    : 'verify your email address';
+
+  const html = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #00f5d4; font-size: 28px; margin: 0;">NextGenEditor</h1>
+        <p style="color: #64748b; margin-top: 8px;">AI-Powered Coding Platform</p>
+      </div>
+      
+      <div style="background: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #0f172a; font-size: 20px; margin: 0 0 16px 0;">Your Verification Code</h2>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+          Use the code below to ${purposeText}. This code will expire in <strong>10 minutes</strong>.
+        </p>
+        
+        <div style="background: #ffffff; border: 2px dashed #00f5d4; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: bold; color: #0f172a; letter-spacing: 8px;">${otp}</span>
+        </div>
+        
+        <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin: 0;">
+          If you didn't request this code, you can safely ignore this email. Your account is secure.
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 24px;">
+        <p style="color: #94a3b8; font-size: 12px;">
+          NextGenEditor &copy; ${new Date().getFullYear()}<br>
+          This is an automated message, please do not reply.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const text = `Your NextGenEditor verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
+
+  // If no transporter configured, log to console (for demo)
+  if (!transporter) {
+    console.log('\n========================================');
+    console.log('📧 MOCK EMAIL SERVICE');
+    console.log('========================================');
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`Purpose: ${purpose}`);
+    console.log('========================================\n');
+    return {
+      success: true,
+      message: `OTP email logged to console (configure SMTP for real delivery)`
+    };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"NextGenEditor" <${FROM_EMAIL}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    console.log(`📧 Email sent: ${info.messageId}`);
+    return {
+      success: true,
+      message: 'OTP sent successfully to your email'
+    };
+  } catch (error) {
+    console.error('Email send error:', error);
+    return {
+      success: false,
+      message: 'Failed to send email. Please try again later.'
+    };
+  }
+};
+
+/**
+ * Test SMTP connection
+ * @returns {Promise<boolean>}
+ */
+const testConnection = async () => {
+  if (!transporter) {
+    console.log('No SMTP transporter configured.');
+    return false;
+  }
+
+  try {
+    await transporter.verify();
+    console.log('✅ SMTP connection verified');
+    return true;
+  } catch (error) {
+    console.error('❌ SMTP connection failed:', error.message);
+    return false;
+  }
+};
+
+module.exports = {
+  sendOTPEmail,
+  testConnection,
+};

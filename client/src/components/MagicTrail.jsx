@@ -30,18 +30,17 @@ export default function MagicTrail() {
 
       dot.style.width = `${size}px`;
       dot.style.height = `${size}px`;
-      dot.style.background = `var(--primary)`;
-      dot.style.boxShadow = `0 0 15px var(--primary), 0 0 30px #4f46e5`;
+      dot.style.background = `var(--theme-primary)`;
+      dot.style.boxShadow = `0 0 15px var(--theme-primary), 0 0 30px var(--theme-accent)`;
       dot.style.opacity = "0.8";
 
       container.appendChild(dot);
       dots.current.push(dot);
 
-      setTimeout(() => {
-        dot.style.opacity = "0";
-        dot.style.transform = "translate(-50%, -50%) scale(0.1)";
-        setTimeout(() => dot.remove(), 1000);
-      }, 50);
+      dot.addEventListener("animationend", () => {
+        dot.remove();
+        dots.current = dots.current.filter((d) => d !== dot);
+      });
     };
 
     let last = 0;

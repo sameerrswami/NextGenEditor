@@ -7,8 +7,15 @@ const challengeSchema = new mongoose.Schema({
   points: { type: Number, required: true },
   starterCode: {
     javascript: { type: String, default: '// Write your solution here\n' },
+    typescript: { type: String, default: '// Write your solution here\n' },
     python:     { type: String, default: '# Write your solution here\n' },
     cpp:        { type: String, default: '// Write your solution here\n' },
+    c:          { type: String, default: '// Write your solution here\n' },
+    java:       { type: String, default: '// Write your solution here\n' },
+    go:         { type: String, default: '// Write your solution here\n' },
+    rust:       { type: String, default: '// Write your solution here\n' },
+    php:        { type: String, default: '<?php\n// Write your solution here\n' },
+    ruby:       { type: String, default: '# Write your solution here\n' },
   },
   testCases: [{
     input:          { type: String, default: '' },

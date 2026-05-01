@@ -5,10 +5,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const dotenv = require('dotenv');
-const path = require('path');
+const config = require('./config');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
 console.log('Environment variables loaded');
 
 const app = express();
@@ -140,7 +138,7 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT;
 
 const startServer = (port) => {
   server.listen(port, () => {
@@ -158,7 +156,7 @@ const startServer = (port) => {
   });
 };
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nextgeneditor')
+mongoose.connect(config.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     startServer(PORT);

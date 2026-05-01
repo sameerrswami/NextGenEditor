@@ -14,7 +14,8 @@ const JUDGE0_LANG_MAP = {
   java: 91,        // Java 17
   go: 107,         // Go 1.23
   rust: 108,       // Rust 1.85
-  php: 98          // PHP 8.3
+  php: 98,         // PHP 8.3
+  ruby: 72         // Ruby 3.3
 };
 
 async function runCloudCode(codeText, language, input = '') {
@@ -150,13 +151,52 @@ router.post('/seed/demo', auth, async (req, res) => {
     const count = await Challenge.countDocuments();
     if (count > 0) return res.json({ message: 'Challenges already seeded' });
 
+    const HELLO_WORLD_CODE = {
+      javascript: 'console.log("Hello, World!");',
+      typescript: 'console.log("Hello, World!");',
+      python: 'print("Hello, World!")',
+      cpp: '#include <iostream>\nusing namespace std;\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
+      c: '#include <stdio.h>\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
+      java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
+      go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
+      rust: 'fn main() {\n    println!("Hello, World!");\n}',
+      php: '<?php\necho "Hello, World!\\n";\n?>',
+      ruby: 'puts "Hello, World!"'
+    };
+
+    const SUM_TWO_NUMBERS_CODE = {
+      javascript: 'const [a,b] = require("fs").readFileSync("/dev/stdin","utf8").trim().split(" ").map(Number);\nconsole.log(a+b);',
+      typescript: 'const [a,b] = require("fs").readFileSync("/dev/stdin","utf8").trim().split(" ").map(Number);\nconsole.log(a+b);',
+      python: 'a,b=map(int,input().split())\nprint(a+b)',
+      cpp: '#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n    return 0;\n}',
+      c: '#include <stdio.h>\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
+      java: 'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        System.out.println(a + b);\n        sc.close();\n    }\n}',
+      go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    var a, b int\n    fmt.Scanf("%d %d", &a, &b)\n    fmt.Println(a + b)\n}',
+      rust: 'use std::io::{self, BufRead};\nfn main() {\n    let stdin = io::stdin();\n    let line = stdin.lock().lines().next().unwrap().unwrap();\n    let nums: Vec<i32> = line.split_whitespace().map(|x| x.parse().unwrap()).collect();\n    println!("{}", nums[0] + nums[1]);\n}',
+      php: '<?php\n$line = trim(fgets(STDIN));\nlist($a, $b) = array_map(\'intval\', explode(\' \', $line));\necho ($a + $b) . "\\n";\n?>',
+      ruby: 'a, b = gets.split.map(&:to_i)\nputs a + b'
+    };
+
+    const GENERIC_CODE = {
+      javascript: '// Write your solution here\nconst input = require("fs").readFileSync("/dev/stdin","utf8").trim();',
+      typescript: '// Write your solution here\nconst input = require("fs").readFileSync("/dev/stdin","utf8").trim();',
+      python: '# Write your solution here\ninput_data = input().strip()',
+      cpp: '#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    // Write your solution here\n    return 0;\n}',
+      c: '#include <stdio.h>\n#include <string.h>\nint main() {\n    // Write your solution here\n    return 0;\n}',
+      java: 'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write your solution here\n        sc.close();\n    }\n}',
+      go: 'package main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    // Write your solution here\n    _ = reader\n}',
+      rust: 'use std::io::{self, BufRead};\nfn main() {\n    let stdin = io::stdin();\n    // Write your solution here\n}',
+      php: '<?php\n// Write your solution here\n$input = trim(fgets(STDIN));\n?>',
+      ruby: '# Write your solution here\ninput = gets.chomp'
+    };
+
     const demos = [
       {
         title: 'Hello World',
         description: 'Print "Hello, World!" to the console.',
         difficulty: 'Easy',
         points: 10,
-        starterCode: { javascript: 'console.log("");', python: 'print("")' },
+        starterCode: HELLO_WORLD_CODE,
         testCases: [{ input: '', expectedOutput: 'Hello, World!' }],
       },
       {
@@ -164,10 +204,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Read two integers from input (space-separated on one line) and print their sum.',
         difficulty: 'Easy',
         points: 20,
-        starterCode: {
-          javascript: 'const [a,b] = require("fs").readFileSync("/dev/stdin","utf8").trim().split(" ").map(Number);\nconsole.log(a+b);',
-          python: 'a,b=map(int,input().split())\nprint(a+b)',
-        },
+        starterCode: SUM_TWO_NUMBERS_CODE,
         testCases: [
           { input: '3 5', expectedOutput: '8' },
           { input: '10 20', expectedOutput: '30' },
@@ -178,7 +215,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Print the first N Fibonacci numbers (one per line). N is given as input.',
         difficulty: 'Medium',
         points: 50,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: '5', expectedOutput: '0\n1\n1\n2\n3' },
           { input: '1', expectedOutput: '0' },
@@ -189,7 +226,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Read a string from input and print "YES" if it is a palindrome, "NO" otherwise.',
         difficulty: 'Easy',
         points: 30,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: 'racecar', expectedOutput: 'YES' },
           { input: 'hello', expectedOutput: 'NO' },
@@ -200,7 +237,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Given N, print all prime numbers up to and including N, each on a new line.',
         difficulty: 'Medium',
         points: 75,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: '10', expectedOutput: '2\n3\n5\n7' },
           { input: '2', expectedOutput: '2' },
@@ -211,7 +248,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Reverse the words in a sentence. Input is a single line of text.',
         difficulty: 'Easy',
         points: 25,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: 'Hello World', expectedOutput: 'World Hello' },
           { input: 'The quick brown fox', expectedOutput: 'fox brown quick The' },
@@ -222,7 +259,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Calculate the factorial of a given non-negative integer N. Input is a single integer.',
         difficulty: 'Easy',
         points: 20,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: '5', expectedOutput: '120' },
           { input: '0', expectedOutput: '1' },
@@ -234,7 +271,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Print numbers from 1 to N. For multiples of 3, print "Fizz" instead of the number. For multiples of 5, print "Buzz". For numbers which are multiples of both 3 and 5, print "FizzBuzz". Input is N.',
         difficulty: 'Easy',
         points: 30,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: '15', expectedOutput: '1\\n2\\nFizz\\n4\\nBuzz\\nFizz\\n7\\n8\\nFizz\\nBuzz\\n11\\nFizz\\n13\\n14\\nFizzBuzz' },
         ],
@@ -244,7 +281,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Find the maximum value in an array of space-separated integers. Input is a single line of integers.',
         difficulty: 'Easy',
         points: 15,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: '3 5 1 8 4', expectedOutput: '8' },
           { input: '-10 -20 -5 -30', expectedOutput: '-5' },
@@ -255,7 +292,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Given two words separated by a space, print "YES" if they are anagrams, "NO" otherwise.',
         difficulty: 'Medium',
         points: 40,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: 'listen silent', expectedOutput: 'YES' },
           { input: 'hello world', expectedOutput: 'NO' },
@@ -266,7 +303,7 @@ router.post('/seed/demo', auth, async (req, res) => {
         description: 'Count the number of vowels (a, e, i, o, u) in a given string. Input is a single line string. Output the integer count.',
         difficulty: 'Easy',
         points: 15,
-        starterCode: { javascript: '// Write your solution here', python: '# Write your solution here' },
+        starterCode: GENERIC_CODE,
         testCases: [
           { input: 'hello world', expectedOutput: '3' },
           { input: 'rhythm', expectedOutput: '0' },

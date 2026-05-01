@@ -10,15 +10,45 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
     trim: true,
     lowercase: true
+  },
+  phone: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
   },
   password: {
     type: String,
     required: true,
     minlength: 6
+  },
+  emailOTP: {
+    type: String,
+    default: null
+  },
+  phoneOTP: {
+    type: String,
+    default: null
+  },
+  emailOTPExpiry: {
+    type: Date,
+    default: null
+  },
+  phoneOTPExpiry: {
+    type: Date,
+    default: null
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
   },
   coins: {
     type: Number,
@@ -57,6 +87,14 @@ const userSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Ensure at least email or phone is provided
+userSchema.pre('save', function(next) {
+  if (!this.email && !this.phone) {
+    return next(new Error('Either email or phone is required'));
+  }
+  next();
 });
 
 module.exports = mongoose.model('User', userSchema);

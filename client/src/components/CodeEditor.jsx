@@ -11,8 +11,7 @@ const LANGUAGE_MAP = {
   go: 'go',
   rust: 'rust',
   ruby: 'ruby',
-  php: 'php',
-  csharp: 'csharp'
+  php: 'php'
 };
 
 const CodeEditor = ({ code, setCode, language, theme = 'vs-dark', vimMode = false }) => {

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../api';
 import { Trophy, Star, Award, User, TrendingUp, Crown, Medal } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const RANK_STYLES = {
   1: { bg: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/30', text: 'text-amber-400', icon: <Crown size={18} className="text-amber-400" /> },
@@ -15,7 +13,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${API_URL}/leaderboard`)
+    api.get('/leaderboard')
       .then(res => setBoard(res.data))
       .catch(err => console.error('Failed to fetch leaderboard', err))
       .finally(() => setLoading(false));

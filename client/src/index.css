@@ -4,14 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables that will be updated by ThemeContext */
 :root {
-  --primary: #6366f1;
-  --primary-glow: rgba(99, 102, 241, 0.5);
-  --secondary: #ec4899;
-  --accent: #06b6d4;
   --bg-dark: #020617;
-  --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --bg-surface: #0a0e27;
+  --theme-primary: #00f5d4;
+  --theme-primary-glow: rgba(0, 245, 212, 0.5);
+  --theme-secondary: #ff006e;
+  --theme-accent: #8338ec;
+  --theme-text: #e2e8f0;
+  --theme-muted: #94a3b8;
+  --theme-border: rgba(255, 255, 255, 0.08);
+  --theme-card-bg: rgba(255, 255, 255, 0.03);
+  --theme-glow: rgba(0, 245, 212, 0.15);
 }
 
 @layer base {
@@ -20,66 +25,124 @@
     font-family: 'Outfit', sans-serif;
     background: var(--bg-dark);
     overflow-x: hidden;
+    transition: background 0.5s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight text-white;
+    @apply font-bold tracking-tight;
+    color: var(--theme-text);
+  }
+
+  * {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
 }
 
 @layer components {
-  /* Premium Glass Cards */
+  /* Premium Glass Cards with Theme Colors */
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl transition-all duration-500;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    @apply relative overflow-hidden rounded-2xl;
+    background: linear-gradient(135deg, var(--theme-card-bg) 0%, rgba(255, 255, 255, 0.01) 100%);
     backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--theme-border);
+    transition: all 0.5s ease;
   }
 
   .glass-card:hover {
     @apply -translate-y-1;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: transparent;
+    border-image: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent)) 1;
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
   }
 
-  /* Sexy Buttons */
+  /* Theme-colored Buttons */
   .btn-neon {
     @apply relative px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 active:scale-95;
-    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
-    box-shadow: 0 0 20px var(--primary-glow);
-    color: white;
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%);
+    box-shadow: 0 0 20px var(--theme-primary-glow);
+    color: var(--bg-dark);
   }
 
   .btn-neon:hover {
     @apply brightness-110 -translate-y-0.5;
-    box-shadow: 0 0 30px var(--primary-glow);
+    box-shadow: 0 0 30px var(--theme-primary-glow);
   }
 
   .btn-outline {
     @apply px-6 py-2.5 rounded-xl font-semibold border transition-all duration-300;
-    border-color: var(--glass-border);
-    background: var(--glass);
+    border-color: var(--theme-border);
+    background: var(--theme-card-bg);
     backdrop-filter: blur(8px);
+    color: var(--theme-text);
   }
 
   .btn-outline:hover {
-    @apply bg-white/10 border-white/20 -translate-y-0.5;
+    @apply -translate-y-0.5;
+    background: var(--theme-glow);
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
   }
 
-  /* Gradient Text */
+  /* Gradient Text with Theme */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 font-bold;
+    @apply bg-clip-text text-transparent bg-gradient-to-r font-bold;
+    background-image: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary), var(--theme-accent));
   }
 
   /* Editor Panels */
   .editor-container {
-    @apply rounded-2xl border border-white/5 bg-[#0d1117]/80 backdrop-blur-xl overflow-hidden shadow-2xl;
+    @apply rounded-2xl backdrop-blur-xl overflow-hidden shadow-2xl;
+    background: var(--bg-surface);
+    border: 1px solid var(--theme-border);
   }
 
   /* Inputs */
   .sexy-input {
-    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50;
+    @apply w-full rounded-xl px-4 py-3 transition-all duration-300 focus:outline-none;
+    background: var(--theme-card-bg);
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text);
+  }
+
+  .sexy-input:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 2px var(--theme-primary-glow);
+  }
+
+  .sexy-input::placeholder {
+    color: var(--theme-muted);
+  }
+
+  /* Theme Glows */
+  .glow-primary {
+    box-shadow: 0 0 20px var(--theme-primary-glow);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(var(--theme-accent), 0.3);
+  }
+
+  /* Active Tab */
+  .active-tab {
+    @apply border-b-2 text-white;
+    background: linear-gradient(180deg, var(--theme-glow) 0%, transparent 100%);
+    border-color: var(--theme-primary);
+  }
+
+  /* Status badges */
+  .status-success {
+    @apply px-2.5 py-1 rounded-lg text-xs font-bold;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .status-error {
+    @apply px-2.5 py-1 rounded-lg text-xs font-bold;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
 }
 
@@ -100,6 +163,17 @@
   animation: float 6s ease-in-out infinite;
 }
 
+/* Theme Blob Colors */
+.theme-blob-1 {
+  background: var(--theme-primary);
+}
+.theme-blob-2 {
+  background: var(--theme-secondary);
+}
+.theme-blob-3 {
+  background: var(--theme-accent);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -110,23 +184,25 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+  @apply rounded-full transition-colors;
+  background: var(--theme-border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-muted);
 }
 
 /* Custom Selection */
 ::selection {
-  @apply bg-indigo-500/30 text-white;
-}
-
-/* Tab Active State */
-.active-tab {
-  @apply bg-indigo-500/20 border-b-2 border-indigo-500 text-white;
+  background: var(--theme-primary-glow);
+  color: white;
 }
 
 /* Hero Section Anim */
 .hero-gradient {
-  background: radial-gradient(circle at top center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at top center, var(--theme-glow) 0%, transparent 70%);
 }
+
 @keyframes magicFade {
   0% {
     opacity: 1;
@@ -148,4 +224,96 @@
   animation: magicFade 1.2s ease-out forwards;
   pointer-events: none;
   z-index: 9999;
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, var(--theme-glow) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--theme-primary-glow);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--theme-primary-glow);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes border-glow {
+  0%, 100% {
+    border-color: var(--theme-border);
+  }
+  50% {
+    border-color: var(--theme-primary);
+  }
+}
+
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
 }
