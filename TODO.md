@@ -9,3 +9,4 @@
 - [x] 5. Update `server/index.js` - Call `verifySMTPConnection()` on startup
 - [x] 6. Update `server/config.js` - Minor cleanup/comments
 - [x] 7. Create `.env` template file
+- [x] 8. Fix SMTP IPv6 connection issue - Added `family: 4` and TLS configuration

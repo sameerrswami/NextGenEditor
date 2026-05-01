@@ -5,14 +5,27 @@ let transporter = null;
 
 // Initialize transporter if SMTP credentials are available
 if (SMTP_USER && SMTP_PASS) {
+  const isSecure = SMTP_PORT === 465;
+  
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
-    secure: SMTP_PORT === 465, // true for 465, false for other ports
+    secure: isSecure, // true for 465, false for other ports (587 TLS)
+    // Force IPv4 to avoid IPv6 connectivity issues
+    family: 4,
+    requireTLS: !isSecure, // Require TLS for non-SSL ports
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
+    // Connection timeout settings
+    connectionTimeout: 10000,
+    greetingTimeout: 8000,
+    // TLS configuration
+    tls: {
+      // Don't fail on invalid certificates for development
+      rejectUnauthorized: NODE_ENV !== 'development'
+    }
   });
 } else {
   console.log('\n⚠️  [EMAIL] SMTP credentials not configured. Running in MOCK mode.');
