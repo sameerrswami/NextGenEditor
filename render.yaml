@@ -30,4 +30,4 @@ services:
       - key: FROM_EMAIL
         fromValue: ${FROM_EMAIL}
       - key: CLIENT_URL
-        fromValue: ${CLIENT_URL}
+        value: https://nextgeneditor.vercel.app
