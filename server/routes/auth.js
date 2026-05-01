@@ -156,7 +156,7 @@ router.post('/verify-email-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    if (!email || !otp) {
+if (!email || !otp) {
       return res.status(400).json({ error: 'Email and OTP are required' });
     }
 
@@ -171,8 +171,9 @@ router.post('/verify-email-otp', async (req, res) => {
       return res.status(400).json({ error: result.message });
     }
 
-    // Mark email as verified (OTP cleared after registration)
+    // Mark email as verified and clear OTP
     user.isEmailVerified = true;
+    clearOTP(user, 'email');
     await user.save();
 
 
@@ -241,7 +242,7 @@ router.post('/verify-phone-otp', async (req, res) => {
       return res.status(400).json({ error: 'Phone and OTP are required' });
     }
 
-    const user = await User.findOne({ phone });
+const user = await User.findOne({ phone });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -252,8 +253,9 @@ router.post('/verify-phone-otp', async (req, res) => {
       return res.status(400).json({ error: result.message });
     }
 
-    // Mark phone as verified (OTP cleared after registration)
+    // Mark phone as verified and clear OTP
     user.isPhoneVerified = true;
+    clearOTP(user, 'phone');
     await user.save();
 
 
