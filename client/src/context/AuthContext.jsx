@@ -73,10 +73,14 @@ export const AuthProvider = ({ children }) => {
     return newUser;
   };
 
-  // ─── OTP: Send Email OTP ──────────────────────────────────────────────────
+// ─── OTP: Send Email OTP ──────────────────────────────────────────────────
   const sendEmailOTP = async (email, purpose = 'verification') => {
     const res = await api.post('/auth/send-email-otp', { email, purpose });
-    return res.data;
+    // Handle both success (res.data) and error responses safely
+    if (res && res.data) {
+      return res.data;
+    }
+    throw new Error('No response from server');
   };
 
   // ─── OTP: Verify Email OTP ────────────────────────────────────────────────

@@ -172,7 +172,13 @@ router.post('/send-email-otp', async (req, res) => {
     }
 
     // Check if user exists (for forgot password)
-    let user = await User.findOne({ email });
+    let user;
+    try {
+      user = await User.findOne({ email });
+    } catch (dbError) {
+      console.error('Database query error:', dbError.message);
+      return res.status(503).json({ error: 'Database unavailable. Please try again later.' });
+    }
 
     if (purpose === 'password-reset') {
       // For password reset, only allow real (non-temp) users
@@ -198,7 +204,12 @@ router.post('/send-email-otp', async (req, res) => {
       user.emailOTP = hashedOTP;
       user.emailOTPExpiry = expiry;
       user.lastOTPRequest = new Date();
-      await user.save();
+      try {
+        await user.save();
+      } catch (saveError) {
+        console.error('User save error:', saveError.message);
+        return res.status(503).json({ error: 'Database unavailable. Please try again later.' });
+      }
     } else {
       // Create a new temporary user for registration flow
       const tempPass = Math.random().toString(36).slice(-8) + '1234';
@@ -213,7 +224,12 @@ router.post('/send-email-otp', async (req, res) => {
         lastOTPRequest: new Date(),
         isTempUser: true,
       });
-      await user.save();
+      try {
+        await user.save();
+      } catch (saveError) {
+        console.error('User save error:', saveError.message);
+        return res.status(503).json({ error: 'Database unavailable. Please try again later.' });
+      }
     }
 
     const result = await sendOTPEmail(email, otp, purpose);
@@ -225,7 +241,8 @@ router.post('/send-email-otp', async (req, res) => {
     res.json({ message: result.message });
   } catch (err) {
     console.error('❌ Send email OTP error:', err.message);
-    res.status(500).json({ error: 'Server error: ' + err.message });
+    // Return a safe error message without exposing internal details
+    res.status(500).json({ error: 'Unable to send OTP. Please try again.' });
   }
 });
 
