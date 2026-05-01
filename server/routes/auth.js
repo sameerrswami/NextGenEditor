@@ -185,6 +185,11 @@ router.post('/send-email-otp', async (req, res) => {
       if (!user || user.isTempUser) {
         return res.status(404).json({ error: 'No account found with this email' });
       }
+    } else if (purpose === 'verification') {
+      // For registration, block if a real account already exists with this email
+      if (user && !user.isTempUser) {
+        return res.status(400).json({ error: 'An account with this email already exists. Please log in.' });
+      }
     }
 
     // Rate limiting check
@@ -200,10 +205,12 @@ router.post('/send-email-otp', async (req, res) => {
     const hashedOTP = await hashOTP(otp);
 
     if (user) {
-      // Update existing user's OTP (handles both temp and real users)
+      // Update existing user's OTP
       user.emailOTP = hashedOTP;
       user.emailOTPExpiry = expiry;
       user.lastOTPRequest = new Date();
+      // Reset verification so the new OTP must be verified
+      if (user.isTempUser) user.isEmailVerified = false;
       try {
         await user.save();
       } catch (saveError) {
@@ -303,27 +310,24 @@ router.post('/register-with-otp', async (req, res) => {
       return res.status(400).json({ error: 'Username already taken' });
     }
 
-    // Find user by email
-    let user = await User.findOne({ email });
+    // Find user by email — must be a temp user awaiting registration
+    let user = await User.findOne({ email, isTempUser: true });
     if (!user) {
-      return res.status(404).json({ error: 'User not found. Please request OTP first.' });
+      // Check if a real account already exists
+      const realUser = await User.findOne({ email, isTempUser: false });
+      if (realUser) {
+        return res.status(400).json({ error: 'An account with this email already exists. Please log in.' });
+      }
+      return res.status(404).json({ error: 'Session expired. Please request a new OTP.' });
     }
 
-    // Only allow registration if email is verified
+    // Validate OTP if email not yet verified
     if (!user.isEmailVerified) {
-      // If not verified yet, validate the OTP first
       const otpResult = await validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
       if (!otpResult.valid) {
         return res.status(400).json({ error: otpResult.message });
       }
-      // Mark as verified since OTP is correct
       user.isEmailVerified = true;
-    }
-
-    // Check if email is already registered with a real account
-    const existingRealUser = await User.findOne({ email, isTempUser: false });
-    if (existingRealUser && existingRealUser._id.toString() !== user._id.toString()) {
-      return res.status(400).json({ error: 'Email already registered with an existing account' });
     }
 
     // Convert temp user to real user

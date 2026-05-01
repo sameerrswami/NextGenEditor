@@ -18,12 +18,16 @@ export const AuthProvider = ({ children }) => {
 
   // Axios response interceptor to handle 401 globally
   useEffect(() => {
+    const PUBLIC_PATHS = ['/login', '/forgot-password'];
     const interceptor = api.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          logout();
-          window.location.href = '/login';
+          const isPublicPage = PUBLIC_PATHS.some(p => window.location.pathname.startsWith(p));
+          if (!isPublicPage) {
+            logout();
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }

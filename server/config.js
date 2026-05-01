@@ -6,7 +6,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 // ─── App Configuration ───────────────────────────────────────────────────────
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const PORT = parseInt(process.env.PORT || '5000');
+const PORT = parseInt(process.env.PORT || '5005');
 
 // ─── Database Configuration ──────────────────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nextgeneditor';

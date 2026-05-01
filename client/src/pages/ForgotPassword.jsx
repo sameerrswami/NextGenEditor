@@ -33,7 +33,7 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleVerifyOTP = async (e) => {
+  const handleVerifyOTP = (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -43,6 +43,7 @@ const ForgotPassword = () => {
       return;
     }
 
+    // OTP is validated server-side when the password is reset
     setStep(3);
   };
 

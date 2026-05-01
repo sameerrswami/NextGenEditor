@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 20000,
+  timeout: 60000, // 60s to handle Render free tier cold starts
   headers: {
     'Content-Type': 'application/json',
   },
@@ -21,16 +21,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// NOTE: 401 handling is done centrally in AuthContext to avoid double-redirect
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log error for debugging
     if (error.response) {
       console.error('API Error:', error.response.status, error.response.data);
-      if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
     } else if (error.request) {
       console.error('Network Error: No response received');
     } else {

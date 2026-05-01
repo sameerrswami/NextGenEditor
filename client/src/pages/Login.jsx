@@ -67,6 +67,8 @@ const Login = () => {
     setSuccess('');
     setLoading(true);
     try {
+      if (!signupUsername.trim()) { setError('Username is required'); setLoading(false); return; }
+      if (signupUsername.trim().length < 3) { setError('Username must be at least 3 characters'); setLoading(false); return; }
       if (!signupEmail) { setError('Email is required'); setLoading(false); return; }
       await sendEmailOTP(signupEmail, 'verification');
       setSuccess('OTP sent to your email!');

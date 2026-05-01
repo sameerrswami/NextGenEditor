@@ -10,21 +10,18 @@ if (SMTP_USER && SMTP_PASS) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
-    secure: isSecure, // true for 465, false for other ports (587 TLS)
-    // Force IPv4 to avoid IPv6 connectivity issues
-    family: 4,
-    requireTLS: !isSecure, // Require TLS for non-SSL ports
+    secure: isSecure,
+    family: 4, // Force IPv4 to avoid IPv6 connectivity issues on cloud
+    requireTLS: !isSecure,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
-    // Connection timeout settings
-    connectionTimeout: 10000,
-    greetingTimeout: 8000,
-    // TLS configuration
+    connectionTimeout: 30000, // 30s for cloud environments with cold starts
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
     tls: {
-      // Don't fail on invalid certificates for development
-      rejectUnauthorized: NODE_ENV !== 'development'
+      rejectUnauthorized: true // Always enforce valid certs (Gmail is trusted)
     }
   });
   

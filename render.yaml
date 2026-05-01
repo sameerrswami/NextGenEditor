@@ -19,6 +19,8 @@ services:
         fromValue: ${GROQ_API_KEY}
       - key: SMTP_HOST
         value: smtp.gmail.com
+      - key: NODE_ENV
+        value: production
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
@@ -27,3 +29,5 @@ services:
         fromValue: ${SMTP_PASS}
       - key: FROM_EMAIL
         fromValue: ${FROM_EMAIL}
+      - key: CLIENT_URL
+        fromValue: ${CLIENT_URL}
