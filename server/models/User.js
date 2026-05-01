@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
     trim: true,
     minlength: 3
   },
@@ -23,7 +23,6 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
     minlength: 6
   },
   emailOTP: {
@@ -89,10 +88,17 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure at least email or phone is provided
+// Ensure at least email or phone is provided (for full users, not temp)
 userSchema.pre('save', function(next) {
+  // Skip validation for temp users (those with usernames starting with temp_)
+  if (this.username && this.username.startsWith('temp_')) {
+    return next();
+  }
   if (!this.email && !this.phone) {
     return next(new Error('Either email or phone is required'));
+  }
+  if (!this.password && this.password !== undefined) {
+    return next(new Error('Password is required for registered users'));
   }
   next();
 });

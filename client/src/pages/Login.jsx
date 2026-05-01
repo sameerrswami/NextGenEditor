@@ -3,17 +3,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Mail, Lock, LogIn, Code2, AlertCircle, Loader2, User,
-  Smartphone, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound
+  ArrowRight, CheckCircle, Eye, EyeOff, KeyRound
 } from 'lucide-react';
 import OTPInput from '../components/OTPInput';
 
 const Login = () => {
   // Modes
   const [mode, setMode] = useState('login');
-  const [method, setMethod] = useState('email');
 
   // Login State
-  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
@@ -21,7 +20,6 @@ const Login = () => {
   const [signupStep, setSignupStep] = useState(1);
   const [signupUsername, setSignupUsername] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
-  const [signupPhone, setSignupPhone] = useState('');
   const [signupOTP, setSignupOTP] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [showSignupPassword, setShowSignupPassword] = useState(false);
@@ -33,8 +31,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const {
-    login, sendEmailOTP, sendPhoneOTP,
-    verifyEmailOTP, verifyPhoneOTP, registerWithOTP
+    login, sendEmailOTP, verifyEmailOTP, registerWithOTP
   } = useAuth();
   const navigate = useNavigate();
 
@@ -56,7 +53,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      await login(loginIdentifier, loginPassword, method);
+      await login(loginEmail, loginPassword);
       navigate('/editor');
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Login failed');
@@ -70,15 +67,9 @@ const Login = () => {
     setSuccess('');
     setLoading(true);
     try {
-      if (method === 'email') {
-        if (!signupEmail) { setError('Email is required'); setLoading(false); return; }
-        await sendEmailOTP(signupEmail, 'verification');
-        setSuccess('OTP sent to your email!');
-      } else {
-        if (!signupPhone) { setError('Phone number is required'); setLoading(false); return; }
-        await sendPhoneOTP(signupPhone);
-        setSuccess('OTP sent to your phone (check console for demo)!');
-      }
+      if (!signupEmail) { setError('Email is required'); setLoading(false); return; }
+      await sendEmailOTP(signupEmail, 'verification');
+      setSuccess('OTP sent to your email!');
       setSignupStep(2);
       startCountdown();
     } catch (err) {
@@ -93,11 +84,7 @@ const Login = () => {
     setLoading(true);
     try {
       if (signupOTP.length !== 6) { setError('Please enter a 6-digit OTP'); setLoading(false); return; }
-      if (method === 'email') {
-        await verifyEmailOTP(signupEmail, signupOTP);
-      } else {
-        await verifyPhoneOTP(signupPhone, signupOTP);
-      }
+      await verifyEmailOTP(signupEmail, signupOTP);
       setSuccess('OTP verified successfully!');
       setSignupStep(3);
     } catch (err) {
@@ -113,7 +100,7 @@ const Login = () => {
     if (signupPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
     setLoading(true);
     try {
-      await registerWithOTP(signupUsername, signupPassword, signupOTP, method, signupEmail, signupPhone);
+      await registerWithOTP(signupUsername, signupEmail, signupPassword, signupOTP);
       navigate('/editor');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -126,7 +113,6 @@ const Login = () => {
     setSignupStep(1);
     setSignupUsername('');
     setSignupEmail('');
-    setSignupPhone('');
     setSignupOTP('');
     setSignupPassword('');
     setOtpCountdown(0);
@@ -137,14 +123,6 @@ const Login = () => {
     setError('');
     setSuccess('');
     if (newMode === 'signup') resetSignup();
-  };
-
-  const switchMethod = (newMethod) => {
-    setMethod(newMethod);
-    setError('');
-    setSuccess('');
-    setLoginIdentifier('');
-    resetSignup();
   };
 
   const TabButton = ({ active, onClick, icon: Icon, children }) => (
@@ -163,22 +141,6 @@ const Login = () => {
       }}
     >
       <Icon size={16} />
-      {children}
-    </button>
-  );
-
-  const SubTabButton = ({ active, onClick, children }) => (
-    <button
-      onClick={onClick}
-      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all duration-300 ${active ? '' : 'hover:opacity-80'}`}
-      style={active ? {
-        background: 'var(--theme-primary)',
-        color: 'var(--bg-dark)',
-      } : {
-        background: 'var(--theme-card-bg)',
-        color: 'var(--theme-muted)',
-      }}
-    >
       {children}
     </button>
   );
@@ -220,20 +182,6 @@ const Login = () => {
             </TabButton>
           </div>
 
-          {/* Sub Tabs */}
-          <div className="flex gap-2 mb-6">
-            <SubTabButton active={method === 'email'} onClick={() => switchMethod('email')}>
-              <span className="flex items-center justify-center gap-2">
-                <Mail size={14} /> Email
-              </span>
-            </SubTabButton>
-            <SubTabButton active={method === 'phone'} onClick={() => switchMethod('phone')}>
-              <span className="flex items-center justify-center gap-2">
-                <Smartphone size={14} /> Phone
-              </span>
-            </SubTabButton>
-          </div>
-
           {/* Alerts */}
           {error && (
             <div className="mb-6 p-4 rounded-xl border flex items-center gap-3 animate-slideDown"
@@ -266,21 +214,17 @@ const Login = () => {
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                  {method === 'email' ? 'Email Address' : 'Phone Number'}
+                  Email Address
                 </label>
                 <div className="relative group">
-                  {method === 'email' ? (
-                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                  ) : (
-                    <Smartphone size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                  )}
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
                   <input
-                    type={method === 'email' ? 'email' : 'tel'}
+                    type="email"
                     required
-                    value={loginIdentifier}
-                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
                     className="sexy-input pl-12"
-                    placeholder={method === 'email' ? 'name@example.com' : '+1 234 567 8900'}
+                    placeholder="name@example.com"
                   />
                 </div>
               </div>
@@ -354,21 +298,17 @@ const Login = () => {
 
                   <div className="space-y-1.5">
                     <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                      {method === 'email' ? 'Email Address' : 'Phone Number'}
+                      Email Address
                     </label>
                     <div className="relative group">
-                      {method === 'email' ? (
-                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                      ) : (
-                        <Smartphone size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                      )}
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
                       <input
-                        type={method === 'email' ? 'email' : 'tel'}
+                        type="email"
                         required
-                        value={method === 'email' ? signupEmail : signupPhone}
-                        onChange={(e) => method === 'email' ? setSignupEmail(e.target.value) : setSignupPhone(e.target.value)}
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
                         className="sexy-input pl-12"
-                        placeholder={method === 'email' ? 'name@example.com' : '+1 234 567 8900'}
+                        placeholder="name@example.com"
                       />
                     </div>
                   </div>
@@ -390,7 +330,7 @@ const Login = () => {
                     <p className="text-sm mb-4" style={{ color: 'var(--theme-muted)' }}>
                       Enter the 6-digit code sent to{' '}
                       <strong style={{ color: 'var(--theme-text)' }}>
-                        {method === 'email' ? signupEmail : signupPhone}
+                        {signupEmail}
                       </strong>
                     </p>
                   </div>

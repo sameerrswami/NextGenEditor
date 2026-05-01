@@ -55,10 +55,9 @@ export const AuthProvider = ({ children }) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
-  // ─── Login (supports email or phone) ──────────────────────────────────────
-  const login = async (identifier, password, type = 'email') => {
-    const payload = type === 'email' ? { email: identifier, password } : { phone: identifier, password };
-    const res = await api.post('/auth/login', payload);
+  // ─── Login (email + password only) ──────────────────────────────────────
+  const login = async (email, password) => {
+    const res = await api.post('/auth/login', { email, password });
     if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     setAuthData(newToken, newUser);
@@ -80,31 +79,15 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
-  // ─── OTP: Send Phone OTP ──────────────────────────────────────────────────
-  const sendPhoneOTP = async (phone) => {
-    const res = await api.post('/auth/send-phone-otp', { phone });
-    return res.data;
-  };
-
   // ─── OTP: Verify Email OTP ────────────────────────────────────────────────
   const verifyEmailOTP = async (email, otp) => {
     const res = await api.post('/auth/verify-email-otp', { email, otp });
     return res.data;
   };
 
-  // ─── OTP: Verify Phone OTP ────────────────────────────────────────────────
-  const verifyPhoneOTP = async (phone, otp) => {
-    const res = await api.post('/auth/verify-phone-otp', { phone, otp });
-    return res.data;
-  };
-
   // ─── OTP: Register with OTP ───────────────────────────────────────────────
-  const registerWithOTP = async (username, password, otp, method, email, phone) => {
-    const payload = { username, password, otp, method };
-    if (method === 'email') payload.email = email;
-    if (method === 'phone') payload.phone = phone;
-
-    const res = await api.post('/auth/register-with-otp', payload);
+  const registerWithOTP = async (username, email, password, otp) => {
+    const res = await api.post('/auth/register-with-otp', { username, email, password, otp });
     if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     setAuthData(newToken, newUser);
@@ -144,8 +127,8 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, token, login, register, logout, loading, refreshUser,
-      sendEmailOTP, sendPhoneOTP, verifyEmailOTP, verifyPhoneOTP,
-      registerWithOTP, forgotPassword, resetPassword, changePassword
+      sendEmailOTP, verifyEmailOTP, registerWithOTP, 
+      forgotPassword, resetPassword, changePassword
     }}>
       {children}
     </AuthContext.Provider>

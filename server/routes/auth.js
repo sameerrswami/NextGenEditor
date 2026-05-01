@@ -3,11 +3,38 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config');
 const User = require('../models/User');
-const { generateOTP, getOTPExpiry, validateOTP, sendPhoneOTP, clearOTP } = require('../utils/otp');
+const { generateOTP, getOTPExpiry, validateOTP, clearOTP } = require('../utils/otp');
 const { sendOTPEmail } = require('../utils/email');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
+
+// ─── Helper: Validate email domain ─────────────────────────────────────────────
+// Reject reserved/invalid domains per RFC 2606 and RFC 7505
+const INVALID_EMAIL_DOMAINS = [
+  'example.com',
+  'example.org',
+  'example.net',
+  'example.edu',
+  'test.com',
+  'test.org',
+  'test.net',
+  'localhost',
+  'localhost.localdomain',
+];
+
+const validateEmailDomain = (email) => {
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return { valid: false, message: 'Invalid email format' };
+  if (INVALID_EMAIL_DOMAINS.includes(domain)) {
+    return { valid: false, message: 'Email domain does not accept mail. Please use a valid email address.' };
+  }
+  // Also check for NULL MX (no mail servers) - simple heuristic
+  if (domain.startsWith('example.') || domain.startsWith('test.')) {
+    return { valid: false, message: 'Invalid email domain. Please use a real email address.' };
+  }
+  return { valid: true };
+};
 
 // ─── Helper: Generate JWT Token ─────────────────────────────────────────────
 const generateToken = (user) => {
@@ -23,11 +50,9 @@ const getUserData = (user) => ({
   id: user._id,
   username: user.username,
   email: user.email,
-  phone: user.phone,
   coins: user.coins,
   isPremium: user.isPremium,
   isEmailVerified: user.isEmailVerified,
-  isPhoneVerified: user.isPhoneVerified,
   avatar: user.avatar,
   bio: user.bio,
 });
@@ -43,6 +68,12 @@ router.post('/register', async (req, res) => {
 
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate email domain
+    const emailValidation = validateEmailDomain(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({ error: emailValidation.message });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -66,17 +97,16 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login (traditional - email + password, now also supports phone)
+// Login (email + password only)
 router.post('/login', async (req, res) => {
   try {
-    const { email, phone, password } = req.body;
+    const { email, password } = req.body;
 
-    if ((!email && !phone) || !password) {
-      return res.status(400).json({ error: 'Email/Phone and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const query = email ? { email } : { phone };
-    const user = await User.findOne(query);
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -111,6 +141,12 @@ router.post('/send-email-otp', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    // Validate email domain
+    const emailValidation = validateEmailDomain(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({ error: emailValidation.message });
+    }
+
     const otp = generateOTP();
     const expiry = getOTPExpiry();
 
@@ -126,12 +162,16 @@ router.post('/send-email-otp', async (req, res) => {
       existingUser.emailOTPExpiry = expiry;
       await existingUser.save();
     } else {
+      // Generate a valid temp password (at least 6 characters)
+      const tempPass = Math.random().toString(36).slice(-8) + '1234';
+      const hashedPassword = await bcrypt.hash(tempPass, 10);
+      
       // For new registrations, create a temporary user record or just send OTP
       // We'll store OTP in a temporary way by creating user with just email
       const tempUser = new User({
         username: `temp_${Date.now()}`,
         email,
-        password: await bcrypt.hash(Math.random().toString(36), 10),
+        password: hashedPassword,
         emailOTP: otp,
         emailOTPExpiry: expiry,
       });
@@ -147,7 +187,7 @@ router.post('/send-email-otp', async (req, res) => {
     res.json({ message: result.message });
   } catch (err) {
     console.error('Send email OTP error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
@@ -156,7 +196,7 @@ router.post('/verify-email-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-if (!email || !otp) {
+    if (!email || !otp) {
       return res.status(400).json({ error: 'Email and OTP are required' });
     }
 
@@ -176,7 +216,6 @@ if (!email || !otp) {
     clearOTP(user, 'email');
     await user.save();
 
-
     res.json({ message: 'Email verified successfully', verified: true });
   } catch (err) {
     console.error('Verify email OTP error:', err);
@@ -185,106 +224,22 @@ if (!email || !otp) {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// OTP - PHONE
+// REGISTER WITH OTP (Email only)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Send Phone OTP
-router.post('/send-phone-otp', async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({ error: 'Phone number is required' });
-    }
-
-    // Basic phone validation
-    const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\\s.]?[0-9]{3}[-\\s.]?[0-9]{4,6}$/;
-    if (!phoneRegex.test(phone)) {
-      return res.status(400).json({ error: 'Invalid phone number format' });
-    }
-
-    const otp = generateOTP();
-    const expiry = getOTPExpiry();
-
-    const existingUser = await User.findOne({ phone });
-
-    if (existingUser) {
-      existingUser.phoneOTP = otp;
-      existingUser.phoneOTPExpiry = expiry;
-      await existingUser.save();
-    } else {
-      // Create temporary user for new registration
-      const tempUser = new User({
-        username: `temp_${Date.now()}`,
-        phone,
-        password: await bcrypt.hash(Math.random().toString(36), 10),
-        phoneOTP: otp,
-        phoneOTPExpiry: expiry,
-      });
-      await tempUser.save();
-    }
-
-    const result = await sendPhoneOTP(phone, otp);
-
-    res.json({ message: result.message });
-  } catch (err) {
-    console.error('Send phone OTP error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Verify Phone OTP
-router.post('/verify-phone-otp', async (req, res) => {
-  try {
-    const { phone, otp } = req.body;
-
-    if (!phone || !otp) {
-      return res.status(400).json({ error: 'Phone and OTP are required' });
-    }
-
-const user = await User.findOne({ phone });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const result = validateOTP(otp, user.phoneOTP, user.phoneOTPExpiry);
-
-    if (!result.valid) {
-      return res.status(400).json({ error: result.message });
-    }
-
-    // Mark phone as verified and clear OTP
-    user.isPhoneVerified = true;
-    clearOTP(user, 'phone');
-    await user.save();
-
-
-    res.json({ message: 'Phone verified successfully', verified: true });
-  } catch (err) {
-    console.error('Verify phone OTP error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// REGISTER WITH OTP
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Register with OTP (after email or phone verification)
+// Register with OTP (after email verification)
 router.post('/register-with-otp', async (req, res) => {
   try {
-    const { username, email, phone, password, otp, method } = req.body;
+    const { username, email, password, otp } = req.body;
 
-    if (!username || !password || !otp || !method) {
-      return res.status(400).json({ error: 'Username, password, OTP, and method are required' });
+    if (!username || !password || !otp || !email) {
+      return res.status(400).json({ error: 'Username, password, OTP, and email are required' });
     }
 
-    if (method === 'email' && !email) {
-      return res.status(400).json({ error: 'Email is required for email registration' });
-    }
-
-    if (method === 'phone' && !phone) {
-      return res.status(400).json({ error: 'Phone is required for phone registration' });
+    // Validate email domain
+    const emailValidation = validateEmailDomain(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({ error: emailValidation.message });
     }
 
     // Check if username is taken
@@ -293,55 +248,31 @@ router.post('/register-with-otp', async (req, res) => {
       return res.status(400).json({ error: 'Username already taken' });
     }
 
-    let user;
+// Find user by email
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Please request OTP first.' });
+    }
 
-    if (method === 'email') {
-      // Find user by email and verify OTP
-      user = await User.findOne({ email });
-      if (!user) {
-        return res.status(404).json({ error: 'User not found. Please request OTP first.' });
-      }
-
+    // Check if email is already verified (OTP was already validated in verify-email-otp step)
+    // If so, skip re-validating OTP since it was already cleared from database
+    if (!user.isEmailVerified) {
       const otpResult = validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
       if (!otpResult.valid) {
         return res.status(400).json({ error: otpResult.message });
       }
-
-      // Check if email is already registered with a real account
-      const existingEmail = await User.findOne({ email, username: { $not: /^temp_/ } });
-      if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
-        return res.status(400).json({ error: 'Email already registered' });
-      }
-
-      user.username = username;
-      user.password = await bcrypt.hash(password, 10);
-      user.isEmailVerified = true;
-      clearOTP(user, 'email');
-
-    } else if (method === 'phone') {
-      // Find user by phone and verify OTP
-      user = await User.findOne({ phone });
-      if (!user) {
-        return res.status(404).json({ error: 'User not found. Please request OTP first.' });
-      }
-
-      const otpResult = validateOTP(otp, user.phoneOTP, user.phoneOTPExpiry);
-      if (!otpResult.valid) {
-        return res.status(400).json({ error: otpResult.message });
-      }
-
-      // Check if phone is already registered with a real account
-      const existingPhone = await User.findOne({ phone, username: { $not: /^temp_/ } });
-      if (existingPhone && existingPhone._id.toString() !== user._id.toString()) {
-        return res.status(400).json({ error: 'Phone already registered' });
-      }
-
-      user.username = username;
-      user.password = await bcrypt.hash(password, 10);
-      user.isPhoneVerified = true;
-      clearOTP(user, 'phone');
     }
 
+    // Check if email is already registered with a real account
+    const existingEmail = await User.findOne({ email, username: { $regex: /^((?!temp_).)*$/ } });
+    if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    user.username = username;
+    user.password = await bcrypt.hash(password, 10);
+    user.isEmailVerified = true;
+    clearOTP(user, 'email');
     await user.save();
 
     const token = generateToken(user);
@@ -367,6 +298,12 @@ router.post('/forgot-password', async (req, res) => {
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Validate email domain
+    const emailValidation = validateEmailDomain(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({ error: emailValidation.message });
     }
 
     const user = await User.findOne({ email });
