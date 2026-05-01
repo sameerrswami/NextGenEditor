@@ -3,13 +3,16 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config');
 const User = require('../models/User');
-const { generateOTP, getOTPExpiry, validateOTP, clearOTP } = require('../utils/otp');
+const { generateOTP, getOTPExpiry, hashOTP, validateOTP, clearOTP } = require('../utils/otp');
 const { sendOTPEmail } = require('../utils/email');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// ─── Helper: Validate email domain ─────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
+const OTP_COOLDOWN_MS = 60 * 1000; // 60 seconds between OTP requests
+
+// ─── Helper: Validate email domain ───────────────────────────────────────────
 // Reject reserved/invalid domains per RFC 2606 and RFC 7505
 const INVALID_EMAIL_DOMAINS = [
   'example.com',
@@ -21,6 +24,10 @@ const INVALID_EMAIL_DOMAINS = [
   'test.net',
   'localhost',
   'localhost.localdomain',
+  'invalid',
+  'mailinator.com',
+  'tempmail.com',
+  'throwaway.com',
 ];
 
 const validateEmailDomain = (email) => {
@@ -29,11 +36,22 @@ const validateEmailDomain = (email) => {
   if (INVALID_EMAIL_DOMAINS.includes(domain)) {
     return { valid: false, message: 'Email domain does not accept mail. Please use a valid email address.' };
   }
-  // Also check for NULL MX (no mail servers) - simple heuristic
-  if (domain.startsWith('example.') || domain.startsWith('test.')) {
-    return { valid: false, message: 'Invalid email domain. Please use a real email address.' };
-  }
   return { valid: true };
+};
+
+// ─── Helper: Check OTP rate limit ────────────────────────────────────────────
+const checkOTPRateLimit = (lastOTPRequest) => {
+  if (!lastOTPRequest) return { allowed: true };
+  
+  const timeSinceLastRequest = Date.now() - new Date(lastOTPRequest).getTime();
+  if (timeSinceLastRequest < OTP_COOLDOWN_MS) {
+    const remainingSeconds = Math.ceil((OTP_COOLDOWN_MS - timeSinceLastRequest) / 1000);
+    return { 
+      allowed: false, 
+      message: `Please wait ${remainingSeconds} seconds before requesting a new OTP.` 
+    };
+  }
+  return { allowed: true };
 };
 
 // ─── Helper: Generate JWT Token ─────────────────────────────────────────────
@@ -82,7 +100,13 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword, isEmailVerified: true });
+    const user = new User({ 
+      username, 
+      email, 
+      password: hashedPassword, 
+      isEmailVerified: true,
+      isTempUser: false 
+    });
     await user.save();
 
     const token = generateToken(user);
@@ -92,7 +116,7 @@ router.post('/register', async (req, res) => {
       user: getUserData(user)
     });
   } catch (err) {
-    console.error('Register error:', err);
+    console.error('❌ Register error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -106,7 +130,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, isTempUser: false });
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -123,7 +147,7 @@ router.post('/login', async (req, res) => {
       user: getUserData(user)
     });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('❌ Login error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -147,35 +171,49 @@ router.post('/send-email-otp', async (req, res) => {
       return res.status(400).json({ error: emailValidation.message });
     }
 
-    const otp = generateOTP();
-    const expiry = getOTPExpiry();
-
     // Check if user exists (for forgot password)
-    const existingUser = await User.findOne({ email });
+    let user = await User.findOne({ email });
 
-    if (purpose === 'password-reset' && !existingUser) {
-      return res.status(404).json({ error: 'No account found with this email' });
+    if (purpose === 'password-reset') {
+      // For password reset, only allow real (non-temp) users
+      if (!user || user.isTempUser) {
+        return res.status(404).json({ error: 'No account found with this email' });
+      }
     }
 
-    if (existingUser) {
-      existingUser.emailOTP = otp;
-      existingUser.emailOTPExpiry = expiry;
-      await existingUser.save();
+    // Rate limiting check
+    if (user) {
+      const rateLimitCheck = checkOTPRateLimit(user.lastOTPRequest);
+      if (!rateLimitCheck.allowed) {
+        return res.status(429).json({ error: rateLimitCheck.message });
+      }
+    }
+
+    const otp = generateOTP();
+    const expiry = getOTPExpiry();
+    const hashedOTP = await hashOTP(otp);
+
+    if (user) {
+      // Update existing user's OTP (handles both temp and real users)
+      user.emailOTP = hashedOTP;
+      user.emailOTPExpiry = expiry;
+      user.lastOTPRequest = new Date();
+      await user.save();
     } else {
-      // Generate a valid temp password (at least 6 characters)
+      // Create a new temporary user for registration flow
       const tempPass = Math.random().toString(36).slice(-8) + '1234';
       const hashedPassword = await bcrypt.hash(tempPass, 10);
       
-      // For new registrations, create a temporary user record or just send OTP
-      // We'll store OTP in a temporary way by creating user with just email
-      const tempUser = new User({
+      user = new User({
         username: `temp_${Date.now()}`,
         email,
         password: hashedPassword,
-        emailOTP: otp,
+        emailOTP: hashedOTP,
         emailOTPExpiry: expiry,
+        lastOTPRequest: new Date(),
+        isTempUser: true,
       });
-      await tempUser.save();
+      await user.save();
     }
 
     const result = await sendOTPEmail(email, otp, purpose);
@@ -186,7 +224,7 @@ router.post('/send-email-otp', async (req, res) => {
 
     res.json({ message: result.message });
   } catch (err) {
-    console.error('Send email OTP error:', err);
+    console.error('❌ Send email OTP error:', err.message);
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
@@ -205,7 +243,7 @@ router.post('/verify-email-otp', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const result = validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
+    const result = await validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
 
     if (!result.valid) {
       return res.status(400).json({ error: result.message });
@@ -218,7 +256,7 @@ router.post('/verify-email-otp', async (req, res) => {
 
     res.json({ message: 'Email verified successfully', verified: true });
   } catch (err) {
-    console.error('Verify email OTP error:', err);
+    console.error('❌ Verify email OTP error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -242,36 +280,40 @@ router.post('/register-with-otp', async (req, res) => {
       return res.status(400).json({ error: emailValidation.message });
     }
 
-    // Check if username is taken
-    const existingUsername = await User.findOne({ username });
+    // Check if username is taken by a real user
+    const existingUsername = await User.findOne({ username, isTempUser: false });
     if (existingUsername) {
       return res.status(400).json({ error: 'Username already taken' });
     }
 
-// Find user by email
+    // Find user by email
     let user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: 'User not found. Please request OTP first.' });
     }
 
-    // Check if email is already verified (OTP was already validated in verify-email-otp step)
-    // If so, skip re-validating OTP since it was already cleared from database
+    // Only allow registration if email is verified
     if (!user.isEmailVerified) {
-      const otpResult = validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
+      // If not verified yet, validate the OTP first
+      const otpResult = await validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
       if (!otpResult.valid) {
         return res.status(400).json({ error: otpResult.message });
       }
+      // Mark as verified since OTP is correct
+      user.isEmailVerified = true;
     }
 
     // Check if email is already registered with a real account
-    const existingEmail = await User.findOne({ email, username: { $regex: /^((?!temp_).)*$/ } });
-    if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
-      return res.status(400).json({ error: 'Email already registered' });
+    const existingRealUser = await User.findOne({ email, isTempUser: false });
+    if (existingRealUser && existingRealUser._id.toString() !== user._id.toString()) {
+      return res.status(400).json({ error: 'Email already registered with an existing account' });
     }
 
+    // Convert temp user to real user
     user.username = username;
     user.password = await bcrypt.hash(password, 10);
     user.isEmailVerified = true;
+    user.isTempUser = false;
     clearOTP(user, 'email');
     await user.save();
 
@@ -282,7 +324,7 @@ router.post('/register-with-otp', async (req, res) => {
       user: getUserData(user)
     });
   } catch (err) {
-    console.error('Register with OTP error:', err);
+    console.error('❌ Register with OTP error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -306,16 +348,25 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(400).json({ error: emailValidation.message });
     }
 
-    const user = await User.findOne({ email });
+    // Only send reset OTP to real (non-temp) users
+    const user = await User.findOne({ email, isTempUser: false });
     if (!user) {
       return res.status(404).json({ error: 'No account found with this email' });
     }
 
+    // Rate limiting check
+    const rateLimitCheck = checkOTPRateLimit(user.lastOTPRequest);
+    if (!rateLimitCheck.allowed) {
+      return res.status(429).json({ error: rateLimitCheck.message });
+    }
+
     const otp = generateOTP();
     const expiry = getOTPExpiry();
+    const hashedOTP = await hashOTP(otp);
 
-    user.emailOTP = otp;
+    user.emailOTP = hashedOTP;
     user.emailOTPExpiry = expiry;
+    user.lastOTPRequest = new Date();
     await user.save();
 
     const result = await sendOTPEmail(email, otp, 'password-reset');
@@ -326,7 +377,7 @@ router.post('/forgot-password', async (req, res) => {
 
     res.json({ message: 'Password reset code sent to your email' });
   } catch (err) {
-    console.error('Forgot password error:', err);
+    console.error('❌ Forgot password error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -344,24 +395,24 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, isTempUser: false });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const otpResult = validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
+    const otpResult = await validateOTP(otp, user.emailOTP, user.emailOTPExpiry);
     if (!otpResult.valid) {
       return res.status(400).json({ error: otpResult.message });
     }
 
-    // Update password
+    // Update password securely
     user.password = await bcrypt.hash(newPassword, 10);
     clearOTP(user, 'email');
     await user.save();
 
     res.json({ message: 'Password reset successful. You can now login with your new password.' });
   } catch (err) {
-    console.error('Reset password error:', err);
+    console.error('❌ Reset password error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -397,7 +448,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 
     res.json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error('Change password error:', err);
+    console.error('❌ Change password error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

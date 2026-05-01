@@ -41,11 +41,19 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  lastOTPRequest: {
+    type: Date,
+    default: null
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
   },
   isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  isTempUser: {
     type: Boolean,
     default: false
   },
@@ -90,8 +98,8 @@ const userSchema = new mongoose.Schema({
 
 // Ensure at least email or phone is provided (for full users, not temp)
 userSchema.pre('save', function(next) {
-  // Skip validation for temp users (those with usernames starting with temp_)
-  if (this.username && this.username.startsWith('temp_')) {
+  // Skip validation for temp users
+  if (this.isTempUser) {
     return next();
   }
   if (!this.email && !this.phone) {

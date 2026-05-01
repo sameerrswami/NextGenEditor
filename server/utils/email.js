@@ -14,18 +14,19 @@ if (SMTP_USER && SMTP_PASS) {
       pass: SMTP_PASS,
     },
   });
-} else if (NODE_ENV === 'development') {
-  console.log('\n⚠️  SMTP credentials not configured. Email OTPs will be logged to console.\n');
+} else {
+  console.log('\n⚠️  [EMAIL] SMTP credentials not configured. Running in MOCK mode.');
+  console.log('    OTPs will be logged to console instead of being sent via email.\n');
 }
 
+
 /**
- * Send OTP email
- * @param {string} to - Recipient email
+ * Generate email template for OTP
  * @param {string} otp - OTP code
- * @param {string} purpose - Purpose of the OTP (e.g., 'verification', 'password-reset')
- * @returns {Promise<{success: boolean, message: string}>}
+ * @param {string} purpose - Purpose text
+ * @returns {{subject: string, html: string, text: string}}
  */
-const sendOTPEmail = async (to, otp, purpose = 'verification') => {
+const getEmailTemplate = (otp, purpose = 'verification') => {
   const subject = purpose === 'password-reset'
     ? 'Password Reset - NextGenEditor'
     : 'Email Verification - NextGenEditor';
@@ -67,10 +68,23 @@ const sendOTPEmail = async (to, otp, purpose = 'verification') => {
 
   const text = `Your NextGenEditor verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
 
-  // If no transporter configured, log to console (for demo)
+  return { subject, html, text };
+};
+
+/**
+ * Send OTP email
+ * @param {string} to - Recipient email
+ * @param {string} otp - OTP code
+ * @param {string} purpose - Purpose of the OTP (e.g., 'verification', 'password-reset')
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+const sendOTPEmail = async (to, otp, purpose = 'verification') => {
+  const { subject, html, text } = getEmailTemplate(otp, purpose);
+
+  // If no transporter configured, log to console (development mode)
   if (!transporter) {
     console.log('\n========================================');
-    console.log('📧 MOCK EMAIL SERVICE');
+    console.log('📧 MOCK EMAIL SERVICE (Development Mode)');
     console.log('========================================');
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
@@ -98,7 +112,7 @@ const sendOTPEmail = async (to, otp, purpose = 'verification') => {
       message: 'OTP sent successfully to your email'
     };
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('❌ Email send error:', error.message);
     return {
       success: false,
       message: 'Failed to send email. Please try again later.'
@@ -106,19 +120,20 @@ const sendOTPEmail = async (to, otp, purpose = 'verification') => {
   }
 };
 
+
 /**
  * Test SMTP connection
  * @returns {Promise<boolean>}
  */
 const testConnection = async () => {
   if (!transporter) {
-    console.log('No SMTP transporter configured.');
+    console.log('⚠️  No SMTP transporter configured. Skipping verification.');
     return false;
   }
 
   try {
     await transporter.verify();
-    console.log('✅ SMTP connection verified');
+    console.log('✅ SMTP connection verified successfully');
     return true;
   } catch (error) {
     console.error('❌ SMTP connection failed:', error.message);
@@ -126,7 +141,26 @@ const testConnection = async () => {
   }
 };
 
+/**
+ * Verify SMTP connection on server start
+ * Logs clear status message for production readiness
+ */
+const verifySMTPConnection = async () => {
+  console.log('\n📧 [EMAIL] Verifying SMTP configuration...');
+  const isConnected = await testConnection();
+  
+  if (isConnected) {
+    console.log('   SMTP is ready to send emails.\n');
+  } else {
+    console.log('   Running in MOCK mode. Emails will be logged to console.\n');
+  }
+  
+  return isConnected;
+};
+
 module.exports = {
   sendOTPEmail,
   testConnection,
+  verifySMTPConnection,
+  getEmailTemplate,
 };

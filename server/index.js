@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
+const { verifySMTPConnection } = require('./utils/email');
 
 console.log('Environment variables loaded');
 
@@ -163,9 +164,10 @@ const startServer = (port) => {
 };
 
 mongoose.connect(config.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('MongoDB connected');
     startServer(PORT);
+    await verifySMTPConnection();
   })
   .catch(err => {
     console.error('MongoDB connection error:', err.message);
