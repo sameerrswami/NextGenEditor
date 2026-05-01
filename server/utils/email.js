@@ -27,9 +27,31 @@ if (SMTP_USER && SMTP_PASS) {
       rejectUnauthorized: NODE_ENV !== 'development'
     }
   });
+  
+  console.log(`\n📧 [EMAIL] SMTP configured: ${SMTP_HOST}:${SMTP_PORT}`);
+  console.log(`    From: ${FROM_EMAIL}`);
+  console.log(`    Mode: ${NODE_ENV}\n`);
 } else {
-  console.log('\n⚠️  [EMAIL] SMTP credentials not configured. Running in MOCK mode.');
-  console.log('    OTPs will be logged to console instead of being sent via email.\n');
+  // Allow mock mode in production for debugging (set ALLOW_MOCK_IN_PROD=true)
+  const allowMock = process.env.ALLOW_MOCK_IN_PROD === 'true';
+  
+  if (NODE_ENV === 'production' && !allowMock) {
+    console.error('\n❌ [EMAIL] SMTP credentials NOT configured in production!');
+    console.error('    Please set environment variables:');
+    console.error('    - SMTP_HOST (e.g., smtp.gmail.com)');
+    console.error('    - SMTP_PORT (e.g., 587)');
+    console.error('    - SMTP_USER (your email)');
+    console.error('    - SMTP_PASS (app password)');
+    console.error('    - FROM_EMAIL (sender email)\n');
+  } else {
+    console.log('\n⚠️  [EMAIL] SMTP credentials not configured. Running in MOCK mode.');
+    console.log('    OTPs will be logged to console instead of being sent via email.');
+    if (NODE_ENV === 'production') {
+      console.log('    (Mock mode enabled via ALLOW_MOCK_IN_PROD env var)\n');
+    } else {
+      console.log('\n');
+    }
+  }
 }
 
 
