@@ -69,6 +69,12 @@ app.use('/api', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
+  // Handle body-parser JSON syntax errors and other client payload errors gracefully
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.warn('Bad JSON payload:', err.message);
+    return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
