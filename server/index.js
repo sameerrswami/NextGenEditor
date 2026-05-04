@@ -6,7 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
-const { verifySMTPConnection } = require('./utils/email');
+// const { verifySendGridConnection } = require('./utils/email');
 
 console.log('Environment variables loaded');
 
@@ -18,7 +18,6 @@ const ALLOWED_ORIGINS = [
   'https://nextgeneditor.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
-  // Additional origins from CLIENT_URL env var (comma-separated)
   ...(process.env.CLIENT_URL
     ? process.env.CLIENT_URL.split(',').map(o => o.trim()).filter(Boolean)
     : []
@@ -29,7 +28,6 @@ console.log('✅ CORS allowed origins:', ALLOWED_ORIGINS);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
     console.error(`❌ CORS blocked origin: "${origin}"`);
@@ -51,7 +49,7 @@ const io = new Server(server, {
 // Security middleware
 app.use(helmet());
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
 // Rate limiting
@@ -98,7 +96,6 @@ app.use('/api', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  // Handle body-parser JSON syntax errors and other client payload errors gracefully
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     console.warn('Bad JSON payload:', err.message);
     return res.status(400).json({ error: 'Invalid JSON payload' });
@@ -109,7 +106,6 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Socket.io Multiplayer ─────────────────────────────────────────────────
-// rooms: { roomId: { users: Set<socketId>, code: string, language: string } }
 const rooms = {};
 
 io.on('connection', (socket) => {
@@ -120,14 +116,12 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) rooms[roomId] = { users: {}, code: '', language: 'javascript' };
     rooms[roomId].users[socket.id] = username || 'Anonymous';
 
-    // Send existing state to the new joiner
     socket.emit('room-state', {
       code: rooms[roomId].code,
       language: rooms[roomId].language,
       users: Object.values(rooms[roomId].users),
     });
 
-    // Notify others
     socket.to(roomId).emit('user-joined', { username: rooms[roomId].users[socket.id], users: Object.values(rooms[roomId].users) });
   });
 
@@ -149,7 +143,6 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('chat-message', { message, username, time: new Date().toLocaleTimeString() });
   });
 
-  // Explicit leave room (without disconnecting)
   socket.on('leave-room', ({ roomId }) => {
     if (rooms[roomId] && rooms[roomId].users[socket.id]) {
       const username = rooms[roomId].users[socket.id];
@@ -195,10 +188,11 @@ mongoose.connect(config.MONGO_URI)
   .then(async () => {
     console.log('MongoDB connected');
     startServer(PORT);
-    await verifySMTPConnection();
+    console.log('// Email service ready (welcome emails optional)');
   })
   .catch(err => {
-    console.error('MongoDB connection error:', err.message);
+    console.log('MongoDB connection error:', err.message);
     console.log('Starting server without database connection...');
     startServer(PORT);
   });
+

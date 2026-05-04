@@ -19,13 +19,8 @@ if (!process.env.JWT_SECRET && NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production mode.');
 }
 
-// ─── SMTP Configuration for Email OTP ────────────────────────────────────────
-// For Gmail: Use App Password (not your regular password)
-// Generate at: https://myaccount.google.com/apppasswords
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10); // 465 SSL — used by Gmail service preset
-const SMTP_USER = process.env.SMTP_USER || '';
-const SMTP_PASS = process.env.SMTP_PASS || '';
+// ─── SendGrid Email Configuration (NO SMTP needed) ───────────────────────────
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@nextgeneditor.com';
 
 module.exports = {
@@ -33,9 +28,7 @@ module.exports = {
   PORT,
   MONGO_URI,
   JWT_SECRET,
-  SMTP_HOST,
-  SMTP_PORT,
-  SMTP_USER,
-  SMTP_PASS,
+  SENDGRID_API_KEY,
   FROM_EMAIL,
 };
+

@@ -3,50 +3,23 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Mail, Lock, LogIn, Code2, AlertCircle, Loader2, User,
-  ArrowRight, CheckCircle, Eye, EyeOff, KeyRound
+  Eye, EyeOff
 } from 'lucide-react';
-import OTPInput from '../components/OTPInput';
 
 const Login = () => {
-  // Modes
   const [mode, setMode] = useState('login');
-
-  // Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-
-  // Signup State
-  const [signupStep, setSignupStep] = useState(1);
   const [signupUsername, setSignupUsername] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
-  const [signupOTP, setSignupOTP] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
-
-  // Common State
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const {
-    login, sendEmailOTP, verifyEmailOTP, registerWithOTP
-  } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
-
-  const startCountdown = () => {
-    setOtpCountdown(60);
-    const timer = setInterval(() => {
-      setOtpCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -62,47 +35,20 @@ const Login = () => {
     }
   };
 
-  const handleSendOTP = async () => {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      if (!signupUsername.trim()) { setError('Username is required'); setLoading(false); return; }
-      if (signupUsername.trim().length < 3) { setError('Username must be at least 3 characters'); setLoading(false); return; }
-      if (!signupEmail) { setError('Email is required'); setLoading(false); return; }
-      await sendEmailOTP(signupEmail, 'verification');
-      setSuccess('OTP sent to your email!');
-      setSignupStep(2);
-      startCountdown();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      if (signupOTP.length !== 6) { setError('Please enter a 6-digit OTP'); setLoading(false); return; }
-      await verifyEmailOTP(signupEmail, signupOTP);
-      setSuccess('OTP verified successfully!');
-      setSignupStep(3);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Invalid OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignupComplete = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
-    if (signupPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (signupPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (signupUsername.trim().length < 3) {
+      setError('Username must be at least 3 characters');
+      return;
+    }
     setLoading(true);
     try {
-      await registerWithOTP(signupUsername, signupEmail, signupPassword, signupOTP);
+      await register(signupUsername.trim(), signupEmail, signupPassword);
       navigate('/editor');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -111,26 +57,21 @@ const Login = () => {
     }
   };
 
-  const resetSignup = () => {
-    setSignupStep(1);
-    setSignupUsername('');
-    setSignupEmail('');
-    setSignupOTP('');
-    setSignupPassword('');
-    setOtpCountdown(0);
-  };
-
-  const switchMode = (newMode) => {
-    setMode(newMode);
+  const switchMode = () => {
+    setMode(mode === 'login' ? 'signup' : 'login');
     setError('');
-    setSuccess('');
-    if (newMode === 'signup') resetSignup();
+    // Reset signup fields when switching to login
+    if (mode === 'signup') {
+      setSignupUsername('');
+      setSignupEmail('');
+      setSignupPassword('');
+    }
   };
 
   const TabButton = ({ active, onClick, icon: Icon, children }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${active ? 'scale-105' : 'hover:scale-105 opacity-60'}`}
+      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex-1 ${active ? 'scale-105' : 'hover:scale-105 opacity-60'}`}
       style={active ? {
         background: 'var(--theme-glow)',
         border: '1px solid var(--theme-primary)',
@@ -169,22 +110,30 @@ const Login = () => {
           <p className="mt-2" style={{ color: 'var(--theme-muted)' }}>
             {mode === 'login'
               ? 'Enter your credentials to continue coding'
-              : 'Create an account to start your journey'}
+              : 'Create account instantly - no verification needed'}
           </p>
         </div>
 
         <div className="glass-card p-8 shadow-2xl">
-          {/* Main Tabs */}
-          <div className="flex justify-around gap-2 mb-6 p-1 rounded-xl" style={{ background: 'var(--theme-card-bg)' }}>
-            <TabButton className="w-[50%]" active={mode === 'login'} onClick={() => switchMode('login')} icon={LogIn}>
+          {/* Mode Tabs */}
+          <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: 'var(--theme-card-bg)' }}>
+            <TabButton 
+              active={mode === 'login'} 
+              onClick={() => switchMode('login')} 
+              icon={LogIn}
+            >
               Sign In
             </TabButton>
-            <TabButton className="w-[50%]" active={mode === 'signup'} onClick={() => switchMode('signup')} icon={User}>
-              Create Account
+            <TabButton 
+              active={mode === 'signup'} 
+              onClick={() => switchMode('signup')} 
+              icon={User}
+            >
+              Sign Up
             </TabButton>
           </div>
 
-          {/* Alerts */}
+          {/* Error */}
           {error && (
             <div className="mb-6 p-4 rounded-xl border flex items-center gap-3 animate-slideDown"
               style={{
@@ -198,27 +147,14 @@ const Login = () => {
             </div>
           )}
 
-          {success && (
-            <div className="mb-6 p-4 rounded-xl border flex items-center gap-3 animate-slideDown"
-              style={{
-                background: 'rgba(34, 197, 94, 0.1)',
-                borderColor: 'rgba(34, 197, 94, 0.3)',
-                color: '#22c55e'
-              }}
-            >
-              <CheckCircle size={18} />
-              <span className="text-sm font-medium">{success}</span>
-            </div>
-          )}
-
           {/* Login Form */}
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                  Email Address
+                  Email
                 </label>
-                <div className="relative group">
+                <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
                   <input
                     type="email"
@@ -236,15 +172,11 @@ const Login = () => {
                   <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
                     Password
                   </label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs font-bold transition-colors hover:brightness-125"
-                    style={{ color: 'var(--theme-primary)' }}
-                  >
-                    Forgot Password?
+                  <Link to="/forgot-password" className="text-xs hover:brightness-125" style={{ color: 'var(--theme-primary)' }}>
+                    Forgot?
                   </Link>
                 </div>
-                <div className="relative group">
+                <div className="relative">
                   <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
                   <input
                     type={showLoginPassword ? 'text' : 'password'}
@@ -265,181 +197,98 @@ const Login = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-neon w-full flex items-center justify-center gap-2 mt-4"
-              >
+              <button type="submit" disabled={loading} className="btn-neon w-full flex items-center gap-2">
                 {loading ? <Loader2 className="animate-spin" /> : <LogIn size={20} />}
                 Sign In
               </button>
             </form>
           )}
 
-          {/* Signup Form */}
+          {/* Signup Form - Single Step */}
           {mode === 'signup' && (
-            <>
-              {signupStep === 1 && (
-                <div className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                      Username
-                    </label>
-                    <div className="relative group">
-                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                      <input
-                        type="text"
-                        required
-                        value={signupUsername}
-                        onChange={(e) => setSignupUsername(e.target.value)}
-                        className="sexy-input pl-12"
-                        placeholder="codegod_24"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                      Email Address
-                    </label>
-                    <div className="relative group">
-                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                      <input
-                        type="email"
-                        required
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        className="sexy-input pl-12"
-                        placeholder="name@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSendOTP}
-                    disabled={loading}
-                    className="btn-neon w-full flex items-center justify-center gap-2 mt-4"
-                  >
-                    {loading ? <Loader2 className="animate-spin" /> : <ArrowRight size={20} />}
-                    Send OTP
-                  </button>
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
+                  Username
+                </label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
+                  <input
+                    type="text"
+                    required
+                    value={signupUsername}
+                    onChange={(e) => setSignupUsername(e.target.value)}
+                    className="sexy-input pl-12"
+                    placeholder="yourusername"
+                    minLength={3}
+                  />
                 </div>
-              )}
+              </div>
 
-              {signupStep === 2 && (
-                <div className="space-y-5">
-                  <div className="text-center">
-                    <p className="text-sm mb-4" style={{ color: 'var(--theme-muted)' }}>
-                      Enter the 6-digit code sent to{' '}
-                      <strong style={{ color: 'var(--theme-text)' }}>
-                        {signupEmail}
-                      </strong>
-                    </p>
-                  </div>
-
-                  <OTPInput value={signupOTP} onChange={setSignupOTP} disabled={loading} />
-
-                  <button
-                    onClick={handleVerifyOTP}
-                    disabled={loading || signupOTP.length !== 6}
-                    className="btn-neon w-full flex items-center justify-center gap-2 mt-4"
-                  >
-                    {loading ? <Loader2 className="animate-spin" /> : <CheckCircle size={20} />}
-                    Verify OTP
-                  </button>
-
-                  {otpCountdown > 0 ? (
-                    <p className="text-center text-xs" style={{ color: 'var(--theme-muted)' }}>
-                      Resend OTP in {otpCountdown}s
-                    </p>
-                  ) : (
-                    <button
-                      onClick={handleSendOTP}
-                      disabled={loading}
-                      className="w-full text-center text-xs font-bold transition-colors hover:brightness-125"
-                      style={{ color: 'var(--theme-primary)' }}
-                    >
-                      Resend OTP
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setSignupStep(1)}
-                    className="w-full text-center text-xs font-medium transition-colors hover:brightness-125"
-                    style={{ color: 'var(--theme-muted)' }}
-                  >
-                    Back to info
-                  </button>
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
+                  <input
+                    type="email"
+                    required
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    className="sexy-input pl-12"
+                    placeholder="name@example.com"
+                  />
                 </div>
-              )}
+              </div>
 
-              {signupStep === 3 && (
-                <form onSubmit={handleSignupComplete} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
-                      Create Password
-                    </label>
-                    <div className="relative group">
-                      <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
-                      <input
-                        type={showSignupPassword ? 'text' : 'password'}
-                        required
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        className="sexy-input pl-12 pr-12"
-                        placeholder="••••••••"
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSignupPassword(!showSignupPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2"
-                        style={{ color: 'var(--theme-muted)' }}
-                      >
-                        {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                    <p className="text-xs ml-1" style={{ color: 'var(--theme-muted)' }}>
-                      Minimum 6 characters
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-neon w-full flex items-center justify-center gap-2 mt-4"
-                  >
-                    {loading ? <Loader2 className="animate-spin" /> : <User size={20} />}
-                    Create Account
-                  </button>
-
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-widest font-bold ml-1" style={{ color: 'var(--theme-muted)' }}>
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-muted)' }} />
+                  <input
+                    type={showSignupPassword ? 'text' : 'password'}
+                    required
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    className="sexy-input pl-12 pr-12"
+                    placeholder="••••••••"
+                    minLength={6}
+                  />
                   <button
                     type="button"
-                    onClick={() => setSignupStep(2)}
-                    className="w-full text-center text-xs font-medium transition-colors hover:brightness-125"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2"
                     style={{ color: 'var(--theme-muted)' }}
                   >
-                    Back to OTP
+                    {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </form>
-              )}
-
-              {signupStep > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  {[1, 2, 3].map((s) => (
-                    <div
-                      key={s}
-                      className="h-1.5 rounded-full transition-all duration-500"
-                      style={{
-                        width: signupStep === s ? '24px' : '6px',
-                        background: signupStep >= s ? 'var(--theme-primary)' : 'var(--theme-border)',
-                      }}
-                    />
-                  ))}
                 </div>
-              )}
-            </>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-neon w-full flex items-center gap-2">
+                {loading ? <Loader2 className="animate-spin" /> : <User size={20} />}
+                Create Account
+              </button>
+            </form>
           )}
+
+          {/* Mode Switch */}
+          <div className="text-center mt-6 pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+            {mode === 'login' ? (
+              <button onClick={() => switchMode()} className="text-sm font-medium" style={{ color: 'var(--theme-muted)' }}>
+                No account?{' '}
+                <span className="font-bold" style={{ color: 'var(--theme-primary)' }}>Create one</span>
+              </button>
+            ) : (
+              <button onClick={() => switchMode()} className="text-sm font-medium" style={{ color: 'var(--theme-muted)' }}>
+                Have account?{' '}
+                <span className="font-bold" style={{ color: 'var(--theme-primary)' }}>Sign in</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -447,3 +296,4 @@ const Login = () => {
 };
 
 export default Login;
+

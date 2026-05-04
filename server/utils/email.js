@@ -1,174 +1,56 @@
-const nodemailer = require('nodemailer');
-const { SMTP_USER, SMTP_PASS, FROM_EMAIL, NODE_ENV } = require('../config');
+/**
+ * Optional email utilities for welcome emails or notifications
+ * SendGrid optional - logs to console if not configured
+ */
 
-let transporter = null;
+const sgMail = require('@sendgrid/mail');
+const config = require('../config');
 
-if (SMTP_USER && SMTP_PASS) {
-  // Use nodemailer's built-in Gmail service — handles host/port/TLS automatically
-  // and works reliably on all cloud providers including Render
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-    connectionTimeout: 30000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-  });
+let sgClient = null;
 
-  console.log(`\n📧 [EMAIL] Gmail SMTP configured`);
-  console.log(`    User: ${SMTP_USER}`);
-  console.log(`    From: ${FROM_EMAIL}`);
-  console.log(`    Mode: ${NODE_ENV}\n`);
+if (config.SENDGRID_API_KEY) {
+  sgMail.setApiKey(config.SENDGRID_API_KEY);
+  sgClient = sgMail;
+  console.log(`\\n📧 SendGrid configured (FROM: ${config.FROM_EMAIL})`);
 } else {
-  console.log('\n⚠️  [EMAIL] SMTP credentials not set — running in MOCK mode.');
-  console.log('    OTPs will be logged to console only.\n');
+  console.log('\\n⚠️ SENDGRID_API_KEY not set - emails logged to console');
 }
 
-
 /**
- * Generate email template for OTP
- * @param {string} otp - OTP code
- * @param {string} purpose - Purpose text
- * @returns {{subject: string, html: string, text: string}}
+ * Send welcome email (optional - called from register if configured)
  */
-const getEmailTemplate = (otp, purpose = 'verification') => {
-  const subject = purpose === 'password-reset'
-    ? 'Password Reset - NextGenEditor'
-    : 'Email Verification - NextGenEditor';
-
-  const purposeText = purpose === 'password-reset'
-    ? 'reset your password'
-    : 'verify your email address';
-
+const sendWelcomeEmail = async (to, username) => {
+  const subject = 'Welcome to NextGenEditor!';
   const html = `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #00f5d4; font-size: 28px; margin: 0;">NextGenEditor</h1>
-        <p style="color: #64748b; margin-top: 8px;">AI-Powered Coding Platform</p>
-      </div>
-      
-      <div style="background: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #0f172a; font-size: 20px; margin: 0 0 16px 0;">Your Verification Code</h2>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-          Use the code below to ${purposeText}. This code will expire in <strong>10 minutes</strong>.
-        </p>
-        
-        <div style="background: #ffffff; border: 2px dashed #00f5d4; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: bold; color: #0f172a; letter-spacing: 8px;">${otp}</span>
-        </div>
-        
-        <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin: 0;">
-          If you didn't request this code, you can safely ignore this email. Your account is secure.
-        </p>
-      </div>
-      
-      <div style="text-align: center; margin-top: 24px;">
-        <p style="color: #94a3b8; font-size: 12px;">
-          NextGenEditor &copy; ${new Date().getFullYear()}<br>
-          This is an automated message, please do not reply.
-        </p>
-      </div>
+    <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <h1 style="color: #00f5d4;">Welcome to NextGenEditor, ${username}!</h1>
+      <p>You're all set! Start coding with AI-powered features.</p>
+      <p>NextGenEditor Team</p>
     </div>
   `;
+  const text = `Welcome to NextGenEditor, ${username}!`;
 
-  const text = `Your NextGenEditor verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
-
-  return { subject, html, text };
-};
-
-/**
- * Send OTP email
- * @param {string} to - Recipient email
- * @param {string} otp - OTP code
- * @param {string} purpose - Purpose of the OTP (e.g., 'verification', 'password-reset')
- * @returns {Promise<{success: boolean, message: string}>}
- */
-const sendOTPEmail = async (to, otp, purpose = 'verification') => {
-  const { subject, html, text } = getEmailTemplate(otp, purpose);
-
-  // If no transporter configured, log to console (development mode)
-  if (!transporter) {
-    console.log('\n========================================');
-    console.log('📧 MOCK EMAIL SERVICE (Development Mode)');
-    console.log('========================================');
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`OTP: ${otp}`);
-    console.log(`Purpose: ${purpose}`);
-    console.log('========================================\n');
-    return {
-      success: true,
-      message: `OTP email logged to console (configure SMTP for real delivery)`
-    };
+  if (!sgClient) {
+    console.log(`📧 [WELCOME MOCK] To: ${to} - Welcome, ${username}`);
+    return { success: true, message: 'Welcome email logged (no SendGrid)' };
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: `"NextGenEditor" <${FROM_EMAIL}>`,
+    await sgClient.send({
       to,
+      from: config.FROM_EMAIL,
       subject,
-      text,
       html,
+      text,
     });
-
-    console.log(`📧 Email sent: ${info.messageId}`);
-    return {
-      success: true,
-      message: 'OTP sent successfully to your email'
-    };
+    return { success: true, message: 'Welcome email sent' };
   } catch (error) {
-    console.error('❌ Email send error:', error.message);
-    console.error('❌ Email send full error:', JSON.stringify({ code: error.code, command: error.command, response: error.response, responseCode: error.responseCode }));
-    return {
-      success: false,
-      message: 'Failed to send email. Please try again later.'
-    };
+    console.error('SendGrid error:', error.message);
+    return { success: false, message: 'Failed to send welcome email' };
   }
-};
-
-
-/**
- * Test SMTP connection
- * @returns {Promise<boolean>}
- */
-const testConnection = async () => {
-  if (!transporter) {
-    console.log('⚠️  No SMTP transporter configured. Skipping verification.');
-    return false;
-  }
-
-  try {
-    await transporter.verify();
-    console.log('✅ SMTP connection verified successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ SMTP connection failed:', error.message);
-    return false;
-  }
-};
-
-/**
- * Verify SMTP connection on server start
- * Logs clear status message for production readiness
- */
-const verifySMTPConnection = async () => {
-  console.log('\n📧 [EMAIL] Verifying SMTP configuration...');
-  const isConnected = await testConnection();
-  
-  if (isConnected) {
-    console.log('   SMTP is ready to send emails.\n');
-  } else {
-    console.log('   Running in MOCK mode. Emails will be logged to console.\n');
-  }
-  
-  return isConnected;
 };
 
 module.exports = {
-  sendOTPEmail,
-  testConnection,
-  verifySMTPConnection,
-  getEmailTemplate,
+  sendWelcomeEmail
 };
+

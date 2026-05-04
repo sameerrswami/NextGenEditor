@@ -25,29 +25,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     minlength: 6
   },
-  emailOTP: {
-    type: String,
-    default: null
-  },
-  phoneOTP: {
-    type: String,
-    default: null
-  },
-  emailOTPExpiry: {
-    type: Date,
-    default: null
-  },
-  phoneOTPExpiry: {
-    type: Date,
-    default: null
-  },
-  lastOTPRequest: {
-    type: Date,
-    default: null
-  },
   isEmailVerified: {
     type: Boolean,
-    default: false
+    default: true
   },
   isPhoneVerified: {
     type: Boolean,
@@ -96,19 +76,19 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure at least email or phone is provided (for full users, not temp)
+// Validate basic requirements for registered users
 userSchema.pre('save', function(next) {
-  // Skip validation for temp users
   if (this.isTempUser) {
     return next();
   }
   if (!this.email && !this.phone) {
     return next(new Error('Either email or phone is required'));
   }
-  if (!this.password && this.password !== undefined) {
-    return next(new Error('Password is required for registered users'));
+  if (!this.username) {
+    return next(new Error('Username is required'));
   }
   next();
 });
 
 module.exports = mongoose.model('User', userSchema);
+

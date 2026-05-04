@@ -59,68 +59,31 @@ export const AuthProvider = ({ children }) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
-  // ─── Login (email + password only) ──────────────────────────────────────
+  // ─── Core Auth ────────────────────────────────────────────────────────────
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     setAuthData(newToken, newUser);
     return newUser;
   };
 
-  // ─── Traditional Register ─────────────────────────────────────────────────
   const register = async (username, email, password) => {
     const res = await api.post('/auth/register', { username, email, password });
-    if (!res.data) throw new Error('No data received from server');
     const { token: newToken, user: newUser } = res.data;
     setAuthData(newToken, newUser);
     return newUser;
   };
 
-// ─── OTP: Send Email OTP ──────────────────────────────────────────────────
-  const sendEmailOTP = async (email, purpose = 'verification') => {
-    const res = await api.post('/auth/send-email-otp', { email, purpose });
-    // Handle both success (res.data) and error responses safely
-    if (res && res.data) {
-      return res.data;
-    }
-    throw new Error('No response from server');
-  };
-
-  // ─── OTP: Verify Email OTP ────────────────────────────────────────────────
-  const verifyEmailOTP = async (email, otp) => {
-    const res = await api.post('/auth/verify-email-otp', { email, otp });
-    return res.data;
-  };
-
-  // ─── OTP: Register with OTP ───────────────────────────────────────────────
-  const registerWithOTP = async (username, email, password, otp) => {
-    const res = await api.post('/auth/register-with-otp', { username, email, password, otp });
-    if (!res.data) throw new Error('No data received from server');
-    const { token: newToken, user: newUser } = res.data;
-    setAuthData(newToken, newUser);
-    return newUser;
-  };
-
-  // ─── Forgot Password ──────────────────────────────────────────────────────
   const forgotPassword = async (email) => {
     const res = await api.post('/auth/forgot-password', { email });
     return res.data;
   };
 
-  // ─── Reset Password ───────────────────────────────────────────────────────
-  const resetPassword = async (email, otp, newPassword) => {
-    const res = await api.post('/auth/reset-password', { email, otp, newPassword });
-    return res.data;
-  };
-
-  // ─── Change Password (Authenticated) ──────────────────────────────────────
   const changePassword = async (currentPassword, newPassword) => {
     const res = await api.post('/auth/change-password', { currentPassword, newPassword });
     return res.data;
   };
 
-  // ─── Refresh User ─────────────────────────────────────────────────────────
   const refreshUser = useCallback(async () => {
     if (!token) return;
     try {
@@ -135,8 +98,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, token, login, register, logout, loading, refreshUser,
-      sendEmailOTP, verifyEmailOTP, registerWithOTP, 
-      forgotPassword, resetPassword, changePassword
+      forgotPassword, changePassword
     }}>
       {children}
     </AuthContext.Provider>
@@ -144,3 +106,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
