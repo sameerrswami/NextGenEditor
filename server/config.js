@@ -23,7 +23,7 @@ if (!process.env.JWT_SECRET && NODE_ENV === 'production') {
 // For Gmail: Use App Password (not your regular password)
 // Generate at: https://myaccount.google.com/apppasswords
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10); // 465 (SSL) or 587 (TLS)
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10); // 465 SSL — used by Gmail service preset
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@nextgeneditor.com';
