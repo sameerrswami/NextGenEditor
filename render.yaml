@@ -24,10 +24,10 @@ services:
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
-        fromValue: ${SMTP_USER}
+        value: sameerrswami@gmail.com
       - key: SMTP_PASS
-        fromValue: ${SMTP_PASS}
+        value: ctwkidnfqyltyaeh
       - key: FROM_EMAIL
-        fromValue: ${FROM_EMAIL}
+        value: sameerrswami@gmail.com
       - key: CLIENT_URL
         value: https://nextgeneditor.vercel.app
