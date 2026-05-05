@@ -1,77 +1,93 @@
 # NextGenEditor - AI-Powered Collaborative Coding Platform 🚀
 
+[![Stars](https://img.shields.io/github/stars/sameerrswami/NextGenEditor?style=social)](https://github.com/sameerrswami/NextGenEditor)
+[![Forks](https://img.shields.io/github/forks/sameerrswami/NextGenEditor?style=social)](https://github.com/sameerrswami/NextGenEditor)
+[![Issues](https://img.shields.io/github/issues/sameerrswami/NextGenEditor)](https://github.com/sameerrswami/NextGenEditor/issues)
+[![License](https://img.shields.io/github/license/sameerrswami/NextGenEditor)](LICENSE)
+
+<div align="center">
+  <img src="https://via.placeholder.com/1200x400/020617/00d4ff?text=🧠%20NextGenEditor%20-%20Code%20with%20AI%20🚀" alt="Hero Banner">
+  <br><br>
+  <strong>🌌 Cyberpunk-themed code editor with AI intelligence, multiplayer collab, challenges & gamification!</strong>
+</div>
+
+**Author**: Sameer Swami | 💌 [sameerrswami@gmail.com](mailto:sameerrswami@gmail.com)
+
+
 **NextGenEditor** is a state-of-the-art, cyberpunk-themed coding environment designed for the modern developer. It combines a powerful code execution engine with real-time AI intelligence, live multiplayer collaboration, competitive coding challenges, a global leaderboard, and a coin-based gamification system.
 
 ![NextGenEditor Preview](https://via.placeholder.com/1200x600/020617/6366f1?text=NextGenEditor+AI+Intelligence)
 
 ## ✨ Core Features
 
-### 🧠 AI Intelligence Panel
-*   **Explain**: Get deep insights into complex code blocks.
-*   **Analyze**: Optimize and identify potential bottlenecks.
-*   **Convert**: Instantly translate code between 10+ languages.
-*   **Advanced Debugger (Premium)**: Let AI find and fix your bugs for you.
+| Feature | Description | Status |
+|---------|-------------|--------|
+| 🧠 **AI Intelligence** | Explain/Analyze/Convert/Debug via Groq/Llama3 (+1 coin/use) | ✅ Live |
+| 🤝 **Multiplayer Collab** | Socket.io rooms, live sync/chat/presence | ✅ Live |
+| 🏆 **Coding Challenges** | Judge0 exec (JS/Python/C++/Java/Go), test cases, coins/badges | ✅ Live |
+| 📊 **Leaderboard** | Global coin rankings, podium, premium highlights | ✅ Live |
+| 💻 **Monaco Editor** | Vim mode, multi-lang, themes/glassmorphism/neon | ✅ Live |
+| 💰 **Coins Economy** | Earn on AI/exec/challenges, unlock premium @10k coins | ✅ Live |
+| 👥 **Auth & Profiles** | JWT/register/login/OTP/change-pw/forgot-pw | ✅ Live |
 
-### 🤝 Real-Time Multiplayer Collaboration
-*   **Live Pair Programming**: Create or join a room with a 6-character Room ID.
-*   **Synchronized Editing**: All code changes are broadcast to everyone in the room instantly via Socket.io.
-*   **Language Sync**: Changing language in one client updates it for all participants.
-*   **Integrated Chat**: Built-in live text chat panel inside the multiplayer room.
-*   **Online Presence**: See all users currently in the room.
 
-### 🏆 Coding Challenges & Gamification
-*   **6 Built-in Challenges**: From "Hello World" to Fibonacci — with Easy, Medium, and Hard tiers.
-*   **Real Test-Case Execution**: Solutions are run server-side against hidden test cases. Only passing all tests awards coins.
-*   **Multi-Language Submission**: Submit challenges in JavaScript, Python, or C++.
-*   **Earn Coins**: Every solved challenge rewards you with premium coins.
-*   **One-Click Seed**: Instantly load demo challenges from the UI.
 
-### 📊 Global Leaderboard
-*   **Top 50 Rankings**: See who the best coders are globally, sorted by total coins earned.
-*   **Podium View**: Animated 1st/2nd/3rd place podium for the top three.
-*   **Premium Badges**: Premium users are highlighted with gold badges.
-*   **Follower Count**: Social proof shown alongside rankings.
 
-### 💻 Powerful Editor
-*   **Multi-Language Execution**: JavaScript, Python, C, C++, Java, Go, and Rust.
-*   **Vim Mode Toggle**: Enable full Vim keybindings with a single button click.
-*   **Custom Themes**: Switch between Dark, Light, and High Contrast themes.
-*   **Snippet Manager**: Save, search, and manage your reusable code blocks.
-*   **Glassmorphism UI**: A premium, responsive design with neon accents and backdrop-blur effects.
+## 🚀 How to Use NextGenEditor
 
-### 💰 Coin-Based Economy
-*   **Earn**: Get rewarded for coding!
-    *   +1 Coin for AI interactions
-    *   +2 Coins for successful code execution
-    *   +5 Coins for saving snippets
-    *   +10 to +75 Coins for solving challenges
-*   **Unlock Premium**: Accumulate 10,000 coins to unlock the **Premium Tier**.
+<details>
+<summary>📱 Quick Demo (Click to Expand)</summary>
 
-### 🌐 Social Developer Network
-*   **Public Portfolios**: Share your coding journey with a public profile URL.
-*   **Follow System**: Connect with other developers.
-*   **Profile Views**: See how many people are checking out your work.
-*   **Custom Avatars**: Personalize your identity with PFP uploads.
+1. **🚀 Start Coding Instantly**
+   ```
+   git clone https://github.com/sameerrswami/NextGenEditor.git
+   cd NextGenEditor/server && npm i && npm run dev
+   cd ../client && npm i && npm run dev
+   ```
+   Open `http://localhost:5173` → Go to `/editor`
+
+2. **🧠 Try AI Magic**  
+   Paste code → Click "AI Explain" → Get insights +1 coin! 🔮
+
+3. **🤝 Multiplayer Collab**  
+   Go `/multiplayer` → Create Room ID → Share with friend → Live sync! ⚡
+
+4. **🏆 Solve Challenges**  
+   `/challenges` → Pick one → Code → Submit → Earn coins/badges! 🎉
+
+![Demo GIF Placeholder](https://via.placeholder.com/800x400/020617/00ff88?text=Watch+Me+Code+with+AI+%F0%9F%A4%A8)
+
+</details>
+
+## 🔧 Supported Languages
+
+| Language | Icon | Execution |
+|----------|------|-----------|
+| JavaScript | ⚡ | Local |
+| Python | 🐍 | Judge0 |
+| C++ | ⚙️ | Judge0 |
+| C | ⚙️ | Judge0 |
+| Java | ☕ | Judge0 |
+| Go | 🐹 | Judge0 |
+| Rust | 🦀 | Judge0 |
 
 ## 🛠️ Tech Stack
 
-### Frontend
-*   **React (Vite)**: Lightning-fast frontend architecture.
-*   **Tailwind CSS**: Modern utility-first styling with custom glassmorphism components.
-*   **Socket.io Client**: Real-time bidirectional communication for multiplayer.
-*   **Monaco Editor**: VS Code's editor engine with Vim mode support (`monaco-vim`).
-*   **Lucide-React**: Sleek, professional iconography.
-*   **Axios**: Secure and efficient API communication.
-*   **Context API**: Global state management for Auth and Economy.
+### Frontend ![React](https://img.shields.io/badge/React-18.2-61DAFB?style=flat&logo=react)
+ *   **React (Vite 5.0)**: Lightning-fast frontend architecture.
+ *   **Tailwind CSS 3.3**: Modern utility-first styling w/ glassmorphism/neon.
+ *   **Socket.io-client 4.8**: Real-time multiplayer sync.
+ *   **Monaco Editor 4.6 (+Vim)**: VS Code engine.
+ *   **Lucide-React**: Premium icons.
 
-### Backend
-*   **Node.js & Express**: Scalable server-side logic.
-*   **Socket.io**: WebSocket server for real-time multiplayer rooms.
-*   **MongoDB & Mongoose**: Flexible NoSQL database for users, snippets, challenges, and social data.
-*   **Groq API**: High-speed AI inference using Llama 3 models.
-*   **JWT (JSON Web Tokens)**: Secure, stateless authentication.
-*   **Bcrypt.js**: Industry-standard password hashing.
-*   **Child Process**: Sandboxed local code execution for C, C++, Java, Python, Go, Rust, JavaScript.
+### Backend ![Node](https://img.shields.io/badge/Node-18.x-339933?style=flat&logo=node.js)
+ *   **Express**: Scalable API server.
+ *   **Socket.io 4.8**: WebSocket rooms.
+ *   **MongoDB + Mongoose 8.0**: User/challenge data.
+ *   **Groq AI**: Llama3 inference.
+ *   **JWT + Bcrypt**: Secure auth.
+ *   **Judge0**: Cloud code exec (multi-lang).
+
 
 ## 📦 Important Libraries & Dependencies
 
@@ -108,14 +124,19 @@
 
 ## 📄 Pages & Routes
 
-| Route           | Page          | Description                              |
-|-----------------|---------------|------------------------------------------|
-| `/editor`       | Editor        | Main code editor with AI panel           |
-| `/dashboard`    | Dashboard     | Snippet manager and execution history    |
-| `/challenges`   | Challenges    | Competitive coding problems with rewards |
-| `/leaderboard`  | Leaderboard   | Global coin-based rankings               |
-| `/multiplayer`  | Multiplayer   | Real-time collaborative coding rooms     |
-| `/profile`      | Profile       | Public developer portfolio               |
+| Route | Page | Req Auth | Description |
+|-------|------|----------|-------------|
+| `/` → `/editor` | 💻 Editor | ✅ | Monaco + AI panel |
+| `/dashboard` | 📋 Dashboard | ✅ | Snippets/history |
+| `/challenges` | 🏆 Challenges | ✅ | Judge0 tests/coins |
+| `/leaderboard` | 📊 Leaderboard | - | Global rankings |
+| `/multiplayer` | 🤝 Multiplayer | - | Socket rooms |
+| `/profile/:user` | 👤 Profile | ✅ | Portfolio/badges |
+| `/login` | 🔐 Login | - | JWT/OTP |
+| `/forgot-password` | 🔒 Reset | - | Email flow |
+
+[![Deploy](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/sameerrswami/NextGenEditor)
+
 
 ## 🚀 Getting Started
 
@@ -155,13 +176,25 @@
    cd client && npm run dev
    ```
 
-5. **Seed Demo Challenges** *(optional)*
+5. **🌟 Seed Demo Challenges** *(optional)*
 
-   After logging in, go to `/challenges` and click the **↻** refresh icon to auto-seed 6 demo challenges.
+   After login → `/challenges` → Click **↻** → Auto-load 6 demos!
 
-## 🗺️ Future Roadmap
+<div align="center">
 
-Check out our [Feature Roadmap](./FEATURE_ROADMAP.md) for planned features including GitHub integration, one-click deployments, and multi-file project support.
+### 🚀 Quick Deploy
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/sameerrswami/NextGenEditor)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy-git-hub?repo=https://github.com/sameerrswami/NextGenEditor)
 
-## 📜 License
-MIT License - Developed by **Sameer Swami**
+### 🤝 Contribute & Star
+⭐ **Star this repo if you found it useful!**  
+💬 [Issues](https://github.com/sameerrswami/NextGenEditor/issues) | [sameerrswami@gmail.com](mailto:sameerrswami@gmail.com)
+
+![Footer Gradient](https://via.placeholder.com/1200x100/020617/gradient?text=%F0%9F%9A%80%20Made%20with%20%E2%9D%A4%EF%B8%8F%20by%20Sameer%20Swami)
+
+**MIT License** © 2024 Sameer Swami
+</div>
+
+
+
+
